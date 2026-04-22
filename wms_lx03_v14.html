@@ -1,0 +1,2509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WMS LX03 Viewer v12</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0d1117;
+  --s1:       #161b27;
+  --s2:       #1e2535;
+  --s3:       #26304a;
+  --border:   #2d3958;
+  --border2:  #3d4e72;
+  --acc:      #3b82f6;
+  --acc2:     #60a5fa;
+  --green:    #22c55e;
+  --amber:    #f59e0b;
+  --red:      #ef4444;
+  --purple:   #a855f7;
+  --cyan:     #06b6d4;
+  --text:     #cdd6f4;
+  --muted:    #6272a4;
+  --muted2:   #8899bb;
+  --r:        6px;
+  --mono:     'IBM Plex Mono', monospace;
+  --display:  'Barlow Condensed', sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);font-size:12px;}
+
+/* ── APP SHELL ── */
+.shell{display:flex;flex-direction:column;height:100vh;}
+
+/* TOPBAR */
+.topbar{
+  background:var(--s1);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  padding:0 16px;height:46px;flex-shrink:0;
+}
+.topbar h1{
+  font-family:var(--display);font-size:20px;font-weight:800;
+  letter-spacing:1px;color:var(--text);white-space:nowrap;
+}
+.topbar .ver{
+  font-size:9px;font-weight:700;letter-spacing:2px;
+  background:rgba(59,130,246,.15);color:var(--acc2);
+  border:1px solid rgba(59,130,246,.3);
+  padding:1px 7px;border-radius:99px;
+}
+.topbar-right{margin-left:auto;display:flex;gap:8px;align-items:center;}
+
+/* STAT CHIPS */
+.chip{
+  font-size:10px;font-weight:600;letter-spacing:.5px;
+  padding:3px 10px;border-radius:99px;
+  background:var(--s2);border:1px solid var(--border);color:var(--muted2);
+}
+.chip.blue  {background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--acc2);}
+.chip.green {background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); color:var(--green);}
+.chip.amber {background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:var(--amber);}
+.chip.red   {background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.3); color:var(--red);}
+
+/* BTN */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:5px 12px;border:none;border-radius:var(--r);
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  letter-spacing:.8px;text-transform:uppercase;cursor:pointer;
+  transition:opacity .15s,transform .1s;white-space:nowrap;
+}
+.btn:active{transform:scale(.96);}
+.btn:hover{opacity:.82;}
+.btn-acc   {background:var(--acc);color:#fff;}
+.btn-green {background:var(--green);color:#000;}
+.btn-amber {background:var(--amber);color:#000;}
+.btn-ghost {background:var(--s2);color:var(--text);border:1px solid var(--border);}
+.btn-red   {background:transparent;color:var(--red);border:1px solid var(--red);}
+
+/* TOOLBAR */
+.toolbar{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  padding:6px 16px;flex-shrink:0;flex-wrap:wrap;
+}
+
+.search-wrap{position:relative;flex:1;min-width:160px;max-width:260px;}
+.search-wrap input{
+  width:100%;background:var(--s2);border:1px solid var(--border);
+  border-radius:var(--r);color:var(--text);font-family:var(--mono);
+  font-size:11px;padding:5px 10px 5px 28px;outline:none;
+  transition:border-color .15s;
+}
+.search-wrap input:focus{border-color:var(--acc);}
+.search-wrap .ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px;}
+
+select{
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-family:var(--mono);font-size:10px;
+  padding:5px 8px;outline:none;cursor:pointer;
+}
+select option{background:var(--s2);}
+
+.sep{width:1px;height:20px;background:var(--border);}
+
+/* TABS */
+.tab-row{
+  background:var(--s1);border-bottom:1px solid var(--border);
+  display:flex;padding:0 16px;flex-shrink:0;
+}
+.tab{
+  padding:8px 14px;font-size:11px;font-weight:700;
+  letter-spacing:.5px;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:color .15s,border-color .15s;
+  white-space:nowrap;
+}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc);}
+.tab:hover:not(.active){color:var(--text);}
+
+/* ── DASHBOARD ── */
+.scope-btn{
+  font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;padding:3px 10px;border-radius:99px;cursor:pointer;
+  border:1px solid var(--border);background:var(--s2);color:var(--muted);
+  transition:all .15s;
+}
+.scope-btn:hover{color:var(--text);border-color:var(--border2);}
+.scope-btn.active{background:rgba(59,130,246,.15);border-color:rgba(59,130,246,.4);color:var(--acc2);}
+.dash-pane{flex:1;overflow:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;flex-shrink:0;}
+.kpi-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;display:flex;flex-direction:column;gap:4px;
+}
+.kpi-label{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+.kpi-val{font-family:var(--display);font-size:26px;font-weight:800;color:var(--text);line-height:1;}
+.kpi-sub{font-size:9px;color:var(--muted2);}
+
+.chart-row{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:10px;flex-shrink:0;}
+.chart-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;display:flex;flex-direction:column;gap:8px;
+}
+.chart-title{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted2);}
+.chart-wrap{position:relative;height:160px;}
+
+.dash-table-wrap{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;flex-shrink:0;
+}
+.dash-table-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.dash-table-title{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--muted2);}
+.dash-table{width:100%;border-collapse:collapse;font-size:10px;}
+.dash-table th{
+  text-align:left;padding:4px 8px;font-size:9px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);
+}
+.dash-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.03);}
+.dash-table tr:hover td{background:rgba(255,255,255,.02);}
+
+.dash-search{
+  background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+  color:var(--text);font-family:var(--mono);font-size:10px;
+  padding:4px 8px;outline:none;width:200px;
+}
+.dash-search:focus{border-color:var(--acc);}
+
+/* CONTENT */
+.content{flex:1;overflow:hidden;display:flex;flex-direction:column;}
+.pane{flex:1;overflow:auto;padding:14px 16px;}
+
+/* ── GRID ── */
+.section-block{margin-bottom:20px;}
+.section-hdr{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  padding-bottom:6px;border-bottom:1px solid var(--border);
+}
+.section-hdr h3{
+  font-family:var(--display);font-size:15px;font-weight:700;
+  letter-spacing:1px;color:var(--text);
+}
+.section-stat{font-size:10px;color:var(--muted);}
+
+.aisle-grid{
+  display:grid;gap:5px;
+}
+
+/* BIN CELL */
+.bin-cell{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);padding:6px;
+  min-height:60px;transition:border-color .15s,background .15s,box-shadow .15s;
+  cursor:default;position:relative;
+}
+.bin-cell:hover{border-color:var(--border2);}
+.bin-cell.has-items{background:var(--s2);}
+.bin-cell.empty{opacity:.45;}
+.bin-cell.highlight{
+  border-color:var(--acc)!important;
+  box-shadow:0 0 0 2px rgba(59,130,246,.2);
+  background:rgba(59,130,246,.06)!important;
+  opacity:1!important;
+}
+.bin-cell.drag-over:not(.nodrop){
+  border-color:var(--green)!important;
+  box-shadow:0 0 0 2px rgba(34,197,94,.2);
+  background:rgba(34,197,94,.06)!important;
+}
+
+.bin-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.bin-id{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px;}
+.bin-cnt{font-size:9px;color:var(--muted2);}
+.bin-add-btn{
+  font-size:10px;font-weight:700;color:var(--muted);background:none;border:none;
+  cursor:pointer;padding:0 2px;line-height:1;border-radius:3px;
+  transition:color .1s,background .1s;
+}
+.bin-add-btn:hover{color:var(--green);background:rgba(34,197,94,.12);}
+
+.hu-list{display:flex;flex-direction:column;gap:2px;}
+
+.hu-tag{
+  display:flex;align-items:center;gap:4px;
+  padding:2px 5px;border-radius:3px;font-size:9px;font-weight:600;
+  cursor:grab;user-select:none;border:1px solid transparent;
+  transition:opacity .15s,transform .1s;position:relative;
+}
+.hu-actions{
+  display:none;gap:2px;flex-shrink:0;margin-left:2px;
+}
+.hu-tag:hover .hu-actions{display:flex;}
+.hu-act-btn{
+  font-size:9px;background:none;border:none;cursor:pointer;
+  padding:1px 3px;border-radius:2px;line-height:1;font-weight:700;
+  transition:color .1s,background .1s;
+}
+.hu-act-edit{color:var(--muted2);}
+.hu-act-edit:hover{color:var(--acc2);background:rgba(59,130,246,.15);}
+.hu-act-del{color:var(--muted);}
+.hu-act-del:hover{color:var(--red);background:rgba(239,68,68,.15);}
+.hu-tag:active{cursor:grabbing;transform:scale(.95);}
+.hu-tag.dragging{opacity:.25;}
+
+/* color by storage type */
+.hu-tag.t001{background:rgba(59,130,246,.12);color:var(--acc2);border-color:rgba(59,130,246,.2);}
+.hu-tag.t002{background:rgba(34,197,94,.1); color:var(--green);border-color:rgba(34,197,94,.2);}
+.hu-tag.t003{background:rgba(245,158,11,.1);color:var(--amber);border-color:rgba(245,158,11,.2);}
+.hu-tag.t007{background:rgba(168,85,247,.1);color:var(--purple);border-color:rgba(168,85,247,.2);}
+.hu-tag.tother{background:rgba(6,182,212,.1);color:var(--cyan);border-color:rgba(6,182,212,.2);}
+
+.hu-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+.t001 .hu-dot{background:var(--acc2);}
+.t002 .hu-dot{background:var(--green);}
+.t003 .hu-dot{background:var(--amber);}
+.t007 .hu-dot{background:var(--purple);}
+.tother .hu-dot{background:var(--cyan);}
+
+.hu-info{flex:1;overflow:hidden;}
+.hu-no{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hu-mat{font-size:8px;color:var(--muted2);}
+.hu-qty{font-size:8px;color:var(--muted);margin-left:auto;white-space:nowrap;flex-shrink:0;}
+
+.hu-dwell{font-size:8px;color:var(--muted);margin-top:1px;}
+.hu-dwell.dwell-ok   {color:var(--green);}
+.hu-dwell.dwell-amber{color:var(--amber);}
+.hu-dwell.dwell-red  {color:var(--red);}
+
+/* overflow counter */
+.more-badge{
+  font-size:8px;font-weight:700;color:var(--muted);
+  padding:1px 5px;border-radius:3px;
+  background:var(--s3);border:1px solid var(--border);
+  cursor:pointer;
+}
+.more-badge:hover{color:var(--text);}
+
+/* ── DETAIL MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;backdrop-filter:blur(3px);
+}
+.modal{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:10px;width:640px;max-height:80vh;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.modal-hdr{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-hdr h3{font-family:var(--display);font-size:16px;font-weight:700;letter-spacing:.5px;}
+.modal-close{
+  background:none;border:none;color:var(--muted);font-size:18px;
+  cursor:pointer;padding:2px 6px;border-radius:4px;font-family:var(--mono);
+}
+.modal-close:hover{color:var(--text);background:var(--s3);}
+.modal-body{flex:1;overflow-y:auto;padding:14px 18px;}
+
+.detail-table{width:100%;border-collapse:collapse;font-size:11px;}
+.detail-table th{
+  text-align:left;padding:5px 8px;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);
+}
+.detail-table td{
+  padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);
+  vertical-align:middle;
+}
+.detail-table tr:hover td{background:rgba(255,255,255,.025);}
+
+/* ── TOAST ── */
+#toast{
+  position:fixed;bottom:18px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--s2);border:1px solid var(--border);
+  border-radius:8px;padding:8px 16px;font-size:11px;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;z-index:9999;white-space:nowrap;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.ok  {border-color:var(--green);color:var(--green);}
+#toast.err {border-color:var(--red);  color:var(--red);}
+#toast.info{border-color:var(--acc);  color:var(--acc2);}
+#toast.warn{border-color:var(--amber);color:var(--amber);}
+
+/* ── FILE DROP ZONE ── */
+.dropzone{
+  border:2px dashed var(--border2);border-radius:10px;
+  padding:40px;text-align:center;cursor:pointer;
+  transition:border-color .2s,background .2s;margin-bottom:16px;
+}
+.dropzone:hover,.dropzone.dragover{
+  border-color:var(--acc);background:rgba(59,130,246,.05);
+}
+.dropzone .dz-icon{font-size:36px;margin-bottom:10px;}
+.dropzone .dz-title{font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:6px;}
+.dropzone .dz-sub{font-size:11px;color:var(--muted);}
+
+/* ── OTHER BINS TABLE ── */
+.other-table{width:100%;border-collapse:collapse;font-size:11px;}
+.other-table th{
+  text-align:left;padding:5px 10px;font-size:9px;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--bg);
+}
+.other-table td{padding:6px 10px;border-bottom:1px solid rgba(255,255,255,.04);}
+.other-table tr:hover td{background:rgba(255,255,255,.025);}
+
+/* ── VLM GRID ── */
+.vlm-machine-block{margin-bottom:22px;}
+.vlm-machine-hdr{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;
+  padding-bottom:6px;border-bottom:1px solid var(--border);
+}
+.vlm-machine-hdr h3{
+  font-family:var(--display);font-size:15px;font-weight:700;
+  letter-spacing:1px;color:var(--text);
+}
+.vlm-machine-label{
+  font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;
+  background:rgba(168,85,247,.12);color:var(--purple);
+  border:1px solid rgba(168,85,247,.3);
+  padding:2px 8px;border-radius:99px;
+}
+.vlm-tray-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+  gap:5px;
+}
+.vlm-tray-cell{
+  background:var(--s1);border:1px solid var(--border);
+  border-radius:var(--r);padding:6px;
+  transition:border-color .15s,background .15s,box-shadow .15s;
+  position:relative;
+}
+.vlm-tray-cell:hover{border-color:var(--border2);}
+.vlm-tray-cell.has-items{background:var(--s2);border-color:rgba(168,85,247,.25);}
+.vlm-tray-cell.empty{opacity:.4;}
+.vlm-tray-cell.highlight{
+  border-color:var(--acc)!important;
+  box-shadow:0 0 0 2px rgba(59,130,246,.2);
+  background:rgba(59,130,246,.06)!important;opacity:1!important;
+}
+.vlm-tray-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.vlm-tray-id{
+  font-size:9px;font-weight:700;color:var(--purple);letter-spacing:.5px;
+}
+.vlm-tray-cnt{font-size:9px;color:var(--muted2);}
+
+/* scrollbar */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── CHANGE LOG SIDEBAR ── */
+.sidebar-wrap{
+  display:flex;flex:1;overflow:hidden;
+}
+.changelog-sidebar{
+  width:280px;flex-shrink:0;
+  background:var(--s1);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transition:width .2s;overflow:hidden;
+}
+.changelog-sidebar.collapsed{width:0;}
+.cl-header{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.cl-title{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);}
+.cl-actions{display:flex;gap:4px;}
+.cl-btn{
+  font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:2px 7px;border-radius:4px;cursor:pointer;border:1px solid var(--border);
+  background:var(--s2);color:var(--muted2);transition:all .15s;
+}
+.cl-btn:hover{color:var(--text);border-color:var(--border2);}
+.cl-btn.green{border-color:rgba(34,197,94,.4);color:var(--green);background:rgba(34,197,94,.07);}
+.cl-btn.amber{border-color:rgba(245,158,11,.4);color:var(--amber);background:rgba(245,158,11,.07);}
+.cl-list{flex:1;overflow-y:auto;padding:6px;}
+.cl-empty{text-align:center;padding:40px 12px;color:var(--muted);font-size:10px;}
+.cl-item{
+  padding:7px 9px;margin-bottom:4px;border-radius:5px;
+  background:var(--s2);border:1px solid var(--border);
+  transition:border-color .15s;
+}
+.cl-item:hover{border-color:var(--border2);}
+.cl-item-hdr{display:flex;align-items:center;gap:5px;margin-bottom:3px;}
+.cl-badge{
+  font-size:8px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:1px 5px;border-radius:3px;
+}
+.cl-badge.move  {background:rgba(59,130,246,.15);color:var(--acc2);}
+.cl-badge.add   {background:rgba(34,197,94,.15); color:var(--green);}
+.cl-badge.edit  {background:rgba(245,158,11,.15);color:var(--amber);}
+.cl-badge.delete{background:rgba(239,68,68,.15); color:var(--red);}
+.cl-ts{font-size:8px;color:var(--muted);margin-left:auto;}
+.cl-detail{font-size:9px;color:var(--text);line-height:1.5;}
+.cl-sub{font-size:8px;color:var(--muted2);}
+.cl-clear-btn{
+  margin:6px;padding:5px;border-radius:4px;border:1px solid var(--border);
+  background:none;color:var(--muted);font-size:9px;font-weight:700;
+  cursor:pointer;width:calc(100% - 12px);text-align:center;letter-spacing:.5px;
+  transition:all .15s;
+}
+.cl-clear-btn:hover{color:var(--red);border-color:var(--red);background:rgba(239,68,68,.05);}
+
+/* ── AISLE UTILIZATION CARD ── */
+.aisle-util-card{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;flex-shrink:0;
+}
+.aisle-util-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-top:8px;
+}
+.aisle-util-row{
+  background:var(--s2);border:1px solid var(--border);border-radius:5px;
+  padding:7px 9px;
+}
+.aisle-util-label{font-size:10px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.aisle-util-bar-wrap{height:5px;background:var(--s3);border-radius:3px;overflow:hidden;margin-bottom:4px;}
+.aisle-util-bar{height:100%;border-radius:3px;transition:width .3s;}
+.aisle-util-stats{display:flex;justify-content:space-between;font-size:8px;color:var(--muted2);}
+.aisle-util-pct{font-weight:700;}
+.aisle-util-pct.high{color:var(--red);}
+.aisle-util-pct.mid {color:var(--amber);}
+.aisle-util-pct.low {color:var(--green);}
+
+/* ── PART NUMBER HU COUNT ── */
+.pn-table-wrap{
+  background:var(--s1);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;flex-shrink:0;
+}
+.pn-table{width:100%;border-collapse:collapse;font-size:10px;}
+.pn-table th{
+  text-align:left;padding:4px 8px;font-size:9px;font-weight:700;
+  letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--s1);
+}
+.pn-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.03);}
+.pn-table tr:hover td{background:rgba(255,255,255,.02);}
+.pn-bar{
+  height:4px;background:rgba(59,130,246,.5);border-radius:2px;
+  display:inline-block;vertical-align:middle;
+}
+
+/* ── PRINT PDF ── */
+@media print {
+  .topbar,.toolbar,.tab-row,.changelog-sidebar,.modal-overlay,#toast,#colMapOverlay{display:none!important;}
+  .sidebar-wrap{display:block!important;}
+  .shell,.content,.sidebar-wrap{height:auto!important;overflow:visible!important;}
+  .pane{overflow:visible!important;height:auto!important;}
+  body{background:#fff!important;color:#000!important;}
+  .bin-cell{border:1px solid #ccc!important;background:#f9f9f9!important;}
+  .bin-cell.empty{display:none!important;}
+  .section-hdr h3,.bin-id{color:#000!important;}
+  .hu-tag{background:#eee!important;color:#000!important;border:1px solid #ccc!important;}
+  .hu-actions{display:none!important;}
+  .hu-mat,.hu-qty,.hu-dwell,.section-stat,.bin-cnt,.kpi-label,.kpi-sub,.chart-title{color:#555!important;}
+  .kpi-val{color:#000!important;}
+  canvas{max-width:100%!important;}
+}
+
+/* ── COLUMN MAPPING MODAL ── */
+#colMapOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:10000;
+  display:flex;align-items:center;justify-content:center;
+}
+#colMapModal{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:10px;width:560px;max-width:96vw;max-height:90vh;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#colMapModal .cm-head{
+  padding:14px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+#colMapModal .cm-head h2{
+  font-family:var(--display);font-size:16px;font-weight:700;flex:1;
+}
+#colMapModal .cm-head .cm-badge{
+  font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  background:rgba(245,158,11,.12);color:var(--amber);
+  border:1px solid rgba(245,158,11,.3);padding:2px 8px;border-radius:99px;
+}
+#colMapModal .cm-sub{
+  padding:10px 18px 0;font-size:10px;color:var(--muted2);flex-shrink:0;
+  border-bottom:1px solid var(--border);padding-bottom:10px;
+}
+#colMapModal .cm-detected{
+  padding:8px 18px;background:rgba(34,197,94,.05);
+  border-bottom:1px solid var(--border);flex-shrink:0;
+  font-size:9px;color:var(--muted);letter-spacing:.5px;
+}
+#colMapModal .cm-detected span{color:var(--green);}
+#colMapModal .cm-body{
+  flex:1;overflow-y:auto;padding:10px 18px;display:flex;flex-direction:column;gap:6px;
+}
+.cm-row{
+  display:grid;grid-template-columns:170px 1fr;align-items:center;gap:10px;
+  padding:6px 8px;border-radius:var(--r);background:var(--s2);
+  border:1px solid var(--border);
+}
+.cm-row.required .cm-label::after{content:' *';color:var(--red);}
+.cm-row.mapped{border-color:rgba(34,197,94,.25);background:rgba(34,197,94,.04);}
+.cm-row.unmapped.required{border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.04);}
+.cm-label{font-size:10px;font-weight:600;color:var(--text);}
+.cm-label small{display:block;font-size:9px;color:var(--muted);font-weight:400;margin-top:1px;}
+.cm-select{
+  width:100%;background:var(--s3);border:1px solid var(--border2);
+  border-radius:var(--r);color:var(--text);font-family:var(--mono);
+  font-size:10px;padding:4px 8px;outline:none;cursor:pointer;
+}
+.cm-select:focus{border-color:var(--acc);}
+.cm-select.ok{border-color:rgba(34,197,94,.4);color:var(--green);}
+.cm-select.warn{border-color:rgba(245,158,11,.4);}
+#colMapModal .cm-footer{
+  padding:12px 18px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;flex-shrink:0;
+}
+#colMapModal .cm-footer .cm-hint{
+  flex:1;font-size:9px;color:var(--muted);
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<!-- COLUMN MAPPING MODAL -->
+<div id="colMapOverlay" style="display:none;">
+  <div id="colMapModal">
+    <div class="cm-head">
+      <h2>📋 Column Mapping</h2>
+      <span class="cm-badge">⚠ Unknown Columns</span>
+    </div>
+    <div class="cm-sub">
+      Detected column headers don't match expected names. Map each field to the correct column from your file, or skip optional ones.
+    </div>
+    <div class="cm-detected" id="cmDetectedInfo">
+      Detected header row: <span id="cmHeaderRowNum">—</span> &nbsp;|&nbsp; Columns found: <span id="cmColList">—</span>
+    </div>
+    <div class="cm-body" id="cmBody">
+      <!-- rows injected by JS -->
+    </div>
+    <div class="cm-footer">
+      <span class="cm-hint" id="cmHint">* Required fields must be mapped to proceed.</span>
+      <button class="btn btn-ghost" onclick="cancelColMap()">Cancel</button>
+      <button class="btn btn-acc" id="cmConfirmBtn" onclick="confirmColMap()">✓ Import with This Mapping</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <h1>WMS · LX03</h1>
+    <span class="ver">v14</span>
+    <span class="chip blue" id="chip-bins">0 Bins</span>
+    <span class="chip green" id="chip-hu">0 HUs</span>
+    <span class="chip amber" id="chip-mats">0 Part Numbers</span>
+    <span class="chip" id="chip-ts">No data</span>
+    <div class="topbar-right">
+      <button class="btn btn-ghost" onclick="document.getElementById('xlsxInput').click()">📂 Import XLSX</button>
+      <input type="file" id="xlsxInput" accept=".xlsx,.xls" style="display:none" onchange="importXLSX(this)">
+      <button class="btn btn-green" onclick="exportCSV()">⬇ Export CSV</button>
+      <button class="btn btn-ghost" onclick="toggleChangelog()" id="cl-toggle-btn" title="Change Log">📋 Change Log</button>
+      <button class="btn btn-red" onclick="clearData()">✕ Clear</button>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="ico">⌕</span>
+      <input type="text" id="searchBox" placeholder="Search Bin / HU / Material…" oninput="onSearch()">
+    </div>
+    <select id="filterAisle" onchange="renderGrid()">
+      <option value="">All Aisles</option>
+    </select>
+    <select id="filterMachine" onchange="renderVLMGrid()" style="display:none;">
+      <option value="">All Machines</option>
+    </select>
+    <select id="filterSType" onchange="renderGrid()">
+      <option value="">All Storage Types</option>
+    </select>
+    <div class="sep"></div>
+    <select id="sortBy" onchange="renderGrid()">
+      <option value="bin">Sort: Bin</option>
+      <option value="mat">Sort: Material</option>
+      <option value="qty">Sort: Qty ↓</option>
+      <option value="date">Sort: GR Date ↓</option>
+    </select>
+    <div class="sep"></div>
+    <label style="font-size:10px;color:var(--muted2);display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="checkbox" id="showEmpty" onchange="renderGrid()" style="width:12px;height:12px;">
+      Show Empty
+    </label>
+    <div class="sep"></div>
+    <button class="btn btn-ghost" onclick="saveToStorage()" style="font-size:9px;">💾 Save</button>
+    <span id="saveStatus" style="font-size:9px;color:var(--muted);"></span>
+    <div class="sep"></div>
+    <button class="btn btn-ghost" id="btn-print-grid" onclick="printCurrentGrid()" style="font-size:9px;display:none;" title="Export current grid view as PDF">🖨 Print PDF</button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tab-row">
+    <div class="tab" id="tab-dash" onclick="switchTab('dash')">📊 Dashboard</div>
+    <div class="tab active" id="tab-grid" onclick="switchTab('grid')">📦 Warehouse Grid</div>
+    <div class="tab" id="tab-vlm" onclick="switchTab('vlm')">🏗 VLM Grid</div>
+    <div class="tab" id="tab-other" onclick="switchTab('other')">📋 Other Bins</div>
+    <div class="tab" id="tab-import" onclick="switchTab('import')">📥 Import</div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="sidebar-wrap">
+  <div class="content">
+    <div class="dash-pane" id="pane-dash" style="display:none;">
+      <!-- SCOPE TOGGLE -->
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;margin-bottom:2px;">
+        <span style="font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;">Scope</span>
+        <button id="scope-all" class="scope-btn active" onclick="setDashScope('all')">All</button>
+        <button id="scope-wh"  class="scope-btn"        onclick="setDashScope('wh')">Warehouse Only</button>
+        <button id="scope-vlm" class="scope-btn"        onclick="setDashScope('vlm')">VLM Only</button>
+        <button id="scope-other" class="scope-btn"      onclick="setDashScope('other')">Other Only</button>
+      </div>
+      <!-- KPI ROW -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-label">Total Units</div>
+          <div class="kpi-val" id="kpi-units">—</div>
+          <div class="kpi-sub" id="kpi-units-sub">across all bins</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Unique SKUs</div>
+          <div class="kpi-val" id="kpi-skus">—</div>
+          <div class="kpi-sub">distinct part numbers</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Bins Occupied</div>
+          <div class="kpi-val" id="kpi-bins">—</div>
+          <div class="kpi-sub">bins with stock</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Avg Units / Bin</div>
+          <div class="kpi-val" id="kpi-avg">—</div>
+          <div class="kpi-sub">per occupied bin</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Data As Of</div>
+          <div class="kpi-val" style="font-size:16px;" id="kpi-date">—</div>
+          <div class="kpi-sub" id="kpi-file">—</div>
+        </div>
+      </div>
+      <!-- CHARTS -->
+      <div class="chart-row">
+        <div class="chart-card">
+          <div class="chart-title" id="chart-aisle-title">INVENTORY BY AISLE · STACKED BY LEVEL</div>
+          <div class="chart-wrap"><canvas id="chart-aisle"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">TOP 10 PART NUMBERS BY UNITS</div>
+          <div class="chart-wrap"><canvas id="chart-top10"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">AGING · DAYS SINCE LAST PLACEMENT</div>
+          <div class="chart-wrap" style="position:relative;">
+            <canvas id="chart-aging"></canvas>
+            <div id="aging-empty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;flex-direction:column;gap:4px;background:rgba(13,17,23,.75);border-radius:4px;pointer-events:none;">
+              <span style="font-size:18px;">📅</span>
+              <span style="font-size:9px;color:#6272a4;font-family:'IBM Plex Mono';letter-spacing:.5px;">NO PLACEMENT DATE DATA</span>
+              <span style="font-size:8px;color:#3d4e72;font-family:'IBM Plex Mono';">Import file with "Last stock placement" column</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- DETAIL TABLE -->
+      <div class="dash-table-wrap">
+        <div class="dash-table-hdr">
+          <div>
+            <div class="dash-table-title" id="dash-table-title">DETAIL · ALL ROWS</div>
+            <div id="dash-summary" style="font-size:9px;color:var(--muted);margin-top:3px;"></div>
+          </div>
+          <input class="dash-search" id="dashSearch" placeholder="Filter part number / bin…" oninput="renderDashTable()">
+        </div>
+        <div style="max-height:260px;overflow-y:auto;">
+          <table class="dash-table">
+            <thead><tr>
+              <th>Part Number</th><th>Storage Bin</th><th>Aisle</th>
+              <th>Bay</th><th>Level</th><th>Qty/HU</th><th>Last Placement</th><th>Dwell</th>
+            </tr></thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- AISLE UTILIZATION -->
+      <div class="aisle-util-card" id="aisle-util-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div class="chart-title">AISLE UTILIZATION (BINS OCCUPIED %)</div>
+          <span style="font-size:9px;color:var(--muted);">Red ≥80% · Amber ≥50% · Green &lt;50%</span>
+        </div>
+        <div class="aisle-util-grid" id="aisle-util-grid">
+          <div style="font-size:10px;color:var(--muted);padding:20px;">No data</div>
+        </div>
+      </div>
+      <!-- PART NUMBER HU COUNT TABLE -->
+      <div class="pn-table-wrap" id="pn-count-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="chart-title">PART NUMBER · HU COUNT &amp; DISTRIBUTION</div>
+          <input class="dash-search" id="pnSearch" placeholder="Filter part number…" oninput="renderPNTable()" style="width:160px;">
+        </div>
+        <div style="max-height:240px;overflow-y:auto;">
+          <table class="pn-table">
+            <thead><tr>
+              <th>Part Number</th><th>HU Count</th><th>Bins</th><th>Total Qty</th><th>Distribution</th>
+            </tr></thead>
+            <tbody id="pn-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="pane" id="pane-grid"></div>
+    <div class="pane" id="pane-vlm" style="display:none;"></div>
+    <div class="pane" id="pane-other" style="display:none;"></div>
+    <div class="pane" id="pane-import" style="display:none;">
+      <div class="dropzone" id="dropzone"
+        onclick="document.getElementById('xlsxInput').click()"
+        ondragover="dzOver(event)" ondragleave="dzLeave()" ondrop="dzDrop(event)">
+        <div class="dz-icon">📊</div>
+        <div class="dz-title">Drop LX03 XLSX here</div>
+        <div class="dz-sub">or click to browse · SAP LX03 Excel format (.xlsx / .xls)</div>
+        <div class="dz-sub" style="margin-top:8px;color:var(--muted);">
+          Column order doesn't matter — auto-detected. If column names differ, a mapping dialog will appear.
+        </div>
+      </div>
+    </div>
+  </div><!-- /content -->
+
+  <!-- CHANGE LOG SIDEBAR -->
+  <div class="changelog-sidebar collapsed" id="changelog-sidebar">
+    <div class="cl-header">
+      <span class="cl-title">📋 Change Log</span>
+      <div class="cl-actions">
+        <button class="cl-btn green" onclick="exportChangelogXLSX()" title="Export to Excel">⬇ XLS</button>
+        <button class="cl-btn amber" onclick="exportChangelogPDF()" title="Export to PDF">⬇ PDF</button>
+        <button class="cl-btn" onclick="toggleChangelog()" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="cl-list" id="cl-list">
+      <div class="cl-empty">No changes yet.<br>Drag HUs or add new ones<br>to see the log here.</div>
+    </div>
+    <button class="cl-clear-btn" onclick="clearChangelog()">Clear Log</button>
+  </div>
+
+  </div><!-- /sidebar-wrap -->
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3 id="modal-title">Bin Detail</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════ */
+const KEY_DB = 'wms_lx03_db';
+const KEY_META = 'wms_lx03_meta';
+const KEY_CL = 'wms_lx03_changelog';
+
+// DB: { bins: { [binId]: [hu, ...] }, meta: { importedAt, filename, totalRows } }
+let DB = { bins: {}, meta: {} };
+let _dragHU = null;    // { hu, fromBin }
+let _activeTab = 'grid';
+
+/* ═══════════════════════════════════════════════
+   CHANGE LOG
+═══════════════════════════════════════════════ */
+let CHANGELOG = []; // [{type, ts, hu, mat, fromBin, toBin, qty, note}]
+
+function loadChangelog() {
+  try { CHANGELOG = JSON.parse(localStorage.getItem(KEY_CL) || '[]'); } catch { CHANGELOG = []; }
+}
+
+function saveChangelog() {
+  try { localStorage.setItem(KEY_CL, JSON.stringify(CHANGELOG.slice(0, 500))); } catch {}
+}
+
+function logChange(type, data) {
+  // type: 'move' | 'add' | 'edit' | 'delete'
+  CHANGELOG.unshift({ type, ts: new Date().toISOString(), ...data });
+  if (CHANGELOG.length > 500) CHANGELOG.length = 500;
+  saveChangelog();
+  renderChangelog();
+}
+
+function renderChangelog() {
+  const list = document.getElementById('cl-list');
+  if (!list) return;
+  if (!CHANGELOG.length) {
+    list.innerHTML = '<div class="cl-empty">No changes yet.<br>Drag HUs or add new ones<br>to see the log here.</div>';
+    return;
+  }
+  list.innerHTML = CHANGELOG.map((c, i) => {
+    const dt = new Date(c.ts);
+    const ts = `${dt.getMonth()+1}/${dt.getDate()} ${dt.getHours()}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    let detail = '';
+    if (c.type === 'move')   detail = `<div class="cl-detail">${c.hu}</div><div class="cl-sub">${c.fromBin} → ${c.toBin}</div>`;
+    if (c.type === 'add')    detail = `<div class="cl-detail">${c.hu}</div><div class="cl-sub">→ ${c.toBin} · ${c.mat || '—'} · ${c.qty ?? ''}${c.unit ? ' '+c.unit : ''}</div>`;
+    if (c.type === 'edit')   detail = `<div class="cl-detail">${c.hu}</div><div class="cl-sub">${c.bin} · Qty ${c.oldQty} → ${c.newQty}</div>`;
+    if (c.type === 'delete') detail = `<div class="cl-detail">${c.hu}</div><div class="cl-sub">From ${c.bin} · ${c.mat || '—'}</div>`;
+    return `<div class="cl-item">
+      <div class="cl-item-hdr">
+        <span class="cl-badge ${c.type}">${c.type.toUpperCase()}</span>
+        <span class="cl-ts">${ts}</span>
+      </div>
+      ${detail}
+    </div>`;
+  }).join('');
+}
+
+function clearChangelog() {
+  if (!confirm('Change log를 모두 지울까요?')) return;
+  CHANGELOG = [];
+  saveChangelog();
+  renderChangelog();
+}
+
+function toggleChangelog() {
+  const sidebar = document.getElementById('changelog-sidebar');
+  sidebar.classList.toggle('collapsed');
+}
+
+function exportChangelogXLSX() {
+  if (!CHANGELOG.length) { toast('Change log가 비어있습니다', 'warn'); return; }
+  const rows = CHANGELOG.map(c => ({
+    Type:     c.type.toUpperCase(),
+    Timestamp: new Date(c.ts).toLocaleString('en-US'),
+    'HU Number': c.hu || '',
+    'Part Number': c.mat || '',
+    'From Bin': c.fromBin || c.bin || '',
+    'To Bin':   c.toBin || '',
+    'Qty':      c.qty ?? (c.newQty ?? ''),
+    'Unit':     c.unit || '',
+    Note:       c.note || ''
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, 'ChangeLog');
+  XLSX.writeFile(wb, `LX03_changelog_${new Date().toISOString().slice(0,10)}.xlsx`);
+  toast('Change Log Excel 익스포트 완료', 'ok');
+}
+
+function exportChangelogPDF() {
+  if (!CHANGELOG.length) { toast('Change log가 비어있습니다', 'warn'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  doc.setFont('helvetica');
+  doc.setFontSize(14);
+  doc.text('WMS LX03 - Change Log', 14, 16);
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.text(`Exported: ${new Date().toLocaleString('en-US')}  |  Total: ${CHANGELOG.length} entries`, 14, 22);
+  const rows = CHANGELOG.map(c => [
+    c.type.toUpperCase(),
+    new Date(c.ts).toLocaleString('en-US'),
+    c.hu || '',
+    c.mat || '',
+    c.fromBin || c.bin || '',
+    c.toBin || '',
+    c.qty ?? (c.newQty ?? '')
+  ]);
+  doc.autoTable({
+    startY: 26,
+    head: [['Type','Timestamp','HU Number','Part Number','From Bin','To Bin','Qty']],
+    body: rows,
+    styles: { fontSize: 7, cellPadding: 2 },
+    headStyles: { fillColor: [30, 37, 53], textColor: [205, 214, 244], fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [22, 27, 39] },
+    bodyStyles: { textColor: [180, 190, 210] }
+  });
+  doc.save(`LX03_changelog_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('Change Log PDF 익스포트 완료', 'ok');
+}
+
+/* ═══════════════════════════════════════════════
+   PRINT / PDF CURRENT GRID VIEW
+═══════════════════════════════════════════════ */
+function printCurrentGrid() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const tabLabels = { grid: 'Warehouse Grid', vlm: 'VLM Grid', other: 'Other Bins', dash: 'Dashboard' };
+  const label = tabLabels[_activeTab] || _activeTab;
+  doc.setFont('helvetica');
+  doc.setFontSize(14);
+  doc.text(`WMS LX03 - ${label}`, 14, 16);
+  doc.setFontSize(8);
+  doc.setTextColor(100);
+  doc.text(`File: ${DB.meta.filename || '—'}  |  Printed: ${new Date().toLocaleString('en-US')}`, 14, 22);
+
+  if (_activeTab === 'other') {
+    const otherBins = Object.keys(DB.bins).filter(b => !isStructuredBin(b)).sort();
+    const rows = otherBins.flatMap(b => DB.bins[b].map(h => [
+      h.bin, h.hu, h.mat, h.stype, String(h.qty), h.unit, h.grDate, h.toNo, h.plant
+    ]));
+    doc.autoTable({
+      startY: 26,
+      head: [['Bin','HU Number','Part Number','SType','Qty','Unit','Loaded Date','TO#','Plant']],
+      body: rows,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [30,37,53], textColor:[205,214,244], fontStyle:'bold' },
+      alternateRowStyles: { fillColor:[22,27,39] },
+      bodyStyles: { textColor:[180,190,210] }
+    });
+  } else if (_activeTab === 'grid' || _activeTab === 'vlm') {
+    const allHU = Object.entries(DB.bins).flatMap(([bin,hus]) =>
+      hus.map(h => ({ ...h, _bin: bin }))
+    );
+    const filterAisle = document.getElementById('filterAisle')?.value || '';
+    let rows = allHU;
+    if (_activeTab === 'grid') {
+      rows = rows.filter(h => isStructuredBin(h._bin));
+      if (filterAisle) rows = rows.filter(h => parseBin(h._bin).aisle === filterAisle);
+    } else {
+      rows = rows.filter(h => isVLMBin(h._bin));
+    }
+    const body = rows.map(h => {
+      const p = isStructuredBin(h._bin) ? parseBin(h._bin) : null;
+      return [h._bin, h.hu, h.mat, h.stype, String(h.qty), h.unit, h.grDate, calcDwell(h)||'—'];
+    });
+    doc.autoTable({
+      startY: 26,
+      head: [['Bin','HU Number','Part Number','SType','Qty','Unit','GR Date','Dwell']],
+      body,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [30,37,53], textColor:[205,214,244], fontStyle:'bold' },
+      alternateRowStyles: { fillColor:[22,27,39] },
+      bodyStyles: { textColor:[180,190,210] }
+    });
+  } else {
+    doc.text('Dashboard: use browser Print (Ctrl+P) for chart export.', 14, 34);
+  }
+  doc.save(`LX03_${_activeTab}_${new Date().toISOString().slice(0,10)}.pdf`);
+  toast('PDF 익스포트 완료', 'ok');
+}
+
+/* ═══════════════════════════════════════════════
+   PERSISTENCE
+═══════════════════════════════════════════════ */
+function saveToStorage() {
+  try {
+    localStorage.setItem(KEY_DB, JSON.stringify(DB));
+    const ts = new Date().toLocaleTimeString();
+    document.getElementById('saveStatus').textContent = `Saved ${ts}`;
+    toast('Saved successfully', 'ok');
+  } catch(e) {
+    toast('Save failed (storage quota exceeded)', 'err');
+  }
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem(KEY_DB);
+  if (!raw) return false;
+  try {
+    DB = JSON.parse(raw);
+    return true;
+  } catch { return false; }
+}
+
+/* ═══════════════════════════════════════════════
+   XLSX PARSE  — SAP LX03 format  (v12: Flexible Column Mapping)
+   ─────────────────────────────────────────────
+   • raw:true keeps date/time as Excel serial numbers
+   • Auto-detects header row (scans first 10 rows)
+   • Extended aliases per field cover SAP variants
+   • Column Mapping Modal triggers when auto-match fails
+═══════════════════════════════════════════════ */
+
+const EXCEL_EPOCH_DAYS = 25569;
+
+function excelSerialToMs(serial) {
+  if (typeof serial !== 'number' || isNaN(serial)) return null;
+  return Math.round((serial - EXCEL_EPOCH_DAYS) * 86400 * 1000);
+}
+
+function msToDisplayDate(ms) {
+  if (ms === null || ms === undefined) return '';
+  const d = new Date(ms);
+  return `${d.getMonth()+1}/${d.getDate()}/${d.getFullYear()}`;
+}
+
+function msToDisplayTime(ms) {
+  if (ms === null || ms === undefined) return '';
+  const d = new Date(ms);
+  let h = d.getHours(), m = d.getMinutes(), s = d.getSeconds();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ap}`;
+}
+
+// ── COLUMN FIELD DEFINITIONS ─────────────────────────────────────────────────
+const COL_FIELDS = [
+  { id: 'bin',      label: 'Storage Bin',                 required: true,
+    aliases: ['Storage Bin','Stor. Bin','StorageBin','Bin','Lgplatz','Storage Location','Bin Number'] },
+  { id: 'hu',       label: 'Storage Unit',                required: true,
+    aliases: ['Storage Unit','Stor. Unit','StorageUnit','HU','Handling Unit','Lenum','SU','Storage unit'] },
+  { id: 'mat',      label: 'Material',                    required: false,
+    aliases: ['Material','Material Number','Mat.','Matnr','Part','Part Number','Item','Artikel'] },
+  { id: 'stype',    label: 'Storage Type',                required: false,
+    aliases: ['Storage Type','Stor. Type','StorageType','Lgtyp','Type'] },
+  { id: 'plant',    label: 'Plant',                       required: false,
+    aliases: ['Plant','Werk','Plant Code'] },
+  { id: 'qty',      label: 'Total Stock',                 required: false,
+    aliases: ['Total Stock','TotalStock','Total Qty','Qty','Quantity','Gesamt','Menge','Stock'] },
+  { id: 'avail',    label: 'Available Stock',             required: false,
+    aliases: ['Available stock','Available Stock','Avail. Stock','Avail','Available','Verfügbar'] },
+  { id: 'unit',     label: 'Base Unit of Measure',        required: false,
+    aliases: ['Base Unit of Measure','Base UoM','UoM','Unit','Meins','Bme','Base Unit'] },
+  { id: 'toNo',     label: 'Transfer Order No.',          required: false,
+    aliases: ['Transfer order no.','Transfer order no','TO No','Transfer Order','Tanum'] },
+  { id: 'duration', label: 'Duration',                    required: false,
+    aliases: ['Duration','Dauer'] },
+  { id: 'dateCol',  label: 'Last Stock Placement (Date)', required: false,
+    aliases: ['Last stock placement','GR Date','Letzte Einlagerung','Last Placement','Date','Einl. Datum','Einlagerungsdatum'] },
+  { id: 'timeCol',  label: 'Time',                        required: false,
+    aliases: ['Time','Uhrzeit','GR Time'] },
+  { id: 'sled',     label: 'SLED / BBD',                  required: false,
+    aliases: ['SLED/BBD','SLED','BBD','Shelf Life','Expiry','Best Before','MHD'] },
+];
+
+const normKey = k => String(k).toLowerCase().replace(/[\s./]/g, '');
+
+function autoMatch(field, headerKeys) {
+  for (const alias of field.aliases) {
+    const an = normKey(alias);
+    const found = headerKeys.find(k => normKey(k) === an);
+    if (found !== undefined) return found;
+  }
+  return null;
+}
+
+function buildAutoMapping(headerKeys) {
+  const mapping = {};
+  for (const f of COL_FIELDS) mapping[f.id] = autoMatch(f, headerKeys);
+  return mapping;
+}
+
+function allRequiredMapped(mapping) {
+  return COL_FIELDS.filter(f => f.required).every(f => mapping[f.id]);
+}
+
+// ── HEADER ROW AUTO-DETECTION ─────────────────────────────────────────────────
+function detectHeaderRow(ws) {
+  const allRows = XLSX.utils.sheet_to_json(ws, { raw: true, defval: '', header: 1 });
+  if (!allRows.length) return null;
+  const allNorms = COL_FIELDS.flatMap(f => f.aliases.map(normKey));
+  let bestRow = 0, bestScore = -1;
+  const scanLimit = Math.min(10, allRows.length);
+  for (let i = 0; i < scanLimit; i++) {
+    const cells = allRows[i].map(c => normKey(String(c)));
+    const score = cells.filter(c => allNorms.includes(c)).length;
+    if (score > bestScore) { bestScore = score; bestRow = i; }
+  }
+  const headerArr = allRows[bestRow].map(c => String(c));
+  const dataRows = allRows.slice(bestRow + 1).map(dataRow => {
+    const obj = {};
+    headerArr.forEach((h, i) => { obj[h] = dataRow[i] !== undefined ? dataRow[i] : ''; });
+    return obj;
+  });
+  return { headerRowNum: bestRow + 1, headerKeys: headerArr, dataRows };
+}
+
+// ── PARSE WITH EXPLICIT MAPPING ───────────────────────────────────────────────
+let _pendingImport = null;
+
+function parseWithMapping(dataRows, mapping) {
+  function getVal(row, fieldId) {
+    const key = mapping[fieldId];
+    if (!key) return '';
+    const v = row[key];
+    return (v !== '' && v !== null && v !== undefined) ? v : '';
+  }
+  const bins = {};
+  let totalRows = 0;
+  dataRows.forEach(row => {
+    const bin = String(getVal(row, 'bin') || '').trim();
+    const hu  = String(getVal(row, 'hu')  || '').trim();
+    if (!bin) return;
+    const mat      = String(getVal(row, 'mat')      || '').trim();
+    const stype    = String(getVal(row, 'stype')    || '').trim();
+    const plant    = String(getVal(row, 'plant')    || '').trim();
+    const unit     = String(getVal(row, 'unit')     || '').trim();
+    const toNo     = String(getVal(row, 'toNo')     || '').trim();
+    const duration = String(getVal(row, 'duration') || '').trim();
+    const sled     = String(getVal(row, 'sled')     || '').trim();
+    const qtyRaw   = getVal(row, 'qty');
+    const availRaw = getVal(row, 'avail');
+    const qty   = typeof qtyRaw   === 'number' ? qtyRaw   : parseFloat(String(qtyRaw).replace(/,/g,''))   || 0;
+    const avail = typeof availRaw === 'number' ? availRaw : parseFloat(String(availRaw).replace(/,/g,'')) || 0;
+    const dateSerial = getVal(row, 'dateCol');
+    const timeSerial = getVal(row, 'timeCol');
+    let grDateMs = null, grDate = '', grTime = '';
+    if (typeof dateSerial === 'number' && dateSerial > 1) {
+      const dateInt  = Math.floor(dateSerial);
+      const timeFrac = (typeof timeSerial === 'number' && timeSerial >= 0 && timeSerial < 1) ? timeSerial : 0;
+      grDateMs = excelSerialToMs(dateInt + timeFrac);
+      grDate   = msToDisplayDate(excelSerialToMs(dateInt));
+      if (timeFrac > 0) grTime = msToDisplayTime(excelSerialToMs(timeFrac));
+    } else if (typeof dateSerial === 'string' && dateSerial) {
+      grDate = dateSerial.replace(/^(\d{1,2})-(\d{1,2})-(\d{2})$/, (_, m, d, y) => `${m}/${d}/${+y < 50 ? '20'+y : '19'+y}`);
+      grTime = typeof timeSerial === 'string' ? timeSerial.trim() : '';
+      const attempt = new Date(`${grDate}${grTime ? ' '+grTime : ''}`);
+      if (!isNaN(attempt)) grDateMs = attempt.getTime();
+    }
+    if (!bins[bin]) bins[bin] = [];
+    bins[bin].push({ bin, hu, mat, stype, plant, qty, avail, unit,
+                     toNo, duration, grDate, grTime, grDateMs, sled });
+    totalRows++;
+  });
+  return { bins, meta: { totalRows, importedAt: new Date().toISOString() } };
+}
+
+// ── COLUMN MAPPING MODAL ──────────────────────────────────────────────────────
+function openColMapModal(state) {
+  _pendingImport = state;
+  document.getElementById('cmHeaderRowNum').textContent = `Row ${state.headerRowNum}`;
+  document.getElementById('cmColList').textContent =
+    state.headerKeys.filter(k => k.trim()).join(' · ') || '(none)';
+  const body = document.getElementById('cmBody');
+  body.innerHTML = '';
+  const autoMapping = buildAutoMapping(state.headerKeys);
+  for (const field of COL_FIELDS) {
+    const matched = autoMapping[field.id];
+    const row = document.createElement('div');
+    row.className = 'cm-row' + (field.required ? ' required' : '') +
+                    (matched ? ' mapped' : (field.required ? ' unmapped' : ''));
+    row.id = `cmRow_${field.id}`;
+    const label = document.createElement('div');
+    label.className = 'cm-label';
+    label.innerHTML = `${field.label}<small>${field.aliases.slice(0,3).join(', ')}…</small>`;
+    const sel = document.createElement('select');
+    sel.className = 'cm-select' + (matched ? ' ok' : '');
+    sel.id = `cmSel_${field.id}`;
+    sel.innerHTML = `<option value="">— Skip —</option>`;
+    state.headerKeys.filter(k => k.trim()).forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k; opt.textContent = k;
+      if (k === matched) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', onColMapChange);
+    row.appendChild(label);
+    row.appendChild(sel);
+    body.appendChild(row);
+  }
+  updateColMapConfirmState();
+  document.getElementById('colMapOverlay').style.display = 'flex';
+}
+
+function onColMapChange(e) {
+  const sel = e.target;
+  const fieldId = sel.id.replace('cmSel_', '');
+  const field = COL_FIELDS.find(f => f.id === fieldId);
+  const row = document.getElementById(`cmRow_${fieldId}`);
+  if (sel.value) {
+    sel.className = 'cm-select ok';
+    row.classList.add('mapped'); row.classList.remove('unmapped');
+  } else {
+    sel.className = 'cm-select' + (field.required ? ' warn' : '');
+    row.classList.remove('mapped');
+    if (field.required) row.classList.add('unmapped');
+  }
+  updateColMapConfirmState();
+}
+
+function updateColMapConfirmState() {
+  const btn = document.getElementById('cmConfirmBtn');
+  const hint = document.getElementById('cmHint');
+  const requiredOk = COL_FIELDS.filter(f => f.required).every(f => {
+    const sel = document.getElementById(`cmSel_${f.id}`);
+    return sel && sel.value;
+  });
+  btn.disabled = !requiredOk;
+  btn.style.opacity = requiredOk ? '1' : '0.4';
+  hint.textContent = requiredOk
+    ? '✓ Required fields mapped. Ready to import.'
+    : '* Storage Bin and Storage Unit must be mapped.';
+  hint.style.color = requiredOk ? 'var(--green)' : 'var(--muted)';
+}
+
+function confirmColMap() {
+  if (!_pendingImport) return;
+  const mapping = {};
+  for (const field of COL_FIELDS) {
+    const sel = document.getElementById(`cmSel_${field.id}`);
+    mapping[field.id] = (sel && sel.value) ? sel.value : null;
+  }
+  if (!mapping.bin || !mapping.hu) { toast('Storage Bin and Storage Unit must be mapped', 'err'); return; }
+  document.getElementById('colMapOverlay').style.display = 'none';
+  const result = parseWithMapping(_pendingImport.dataRows, mapping);
+  if (!result || !Object.keys(result.bins).length) {
+    toast('Import failed — no valid rows found with selected mapping', 'err');
+    _pendingImport = null; return;
+  }
+  DB.bins = result.bins;
+  DB.meta = { ...result.meta, filename: _pendingImport.filename || 'unknown.xlsx' };
+  saveToStorage(); refreshFilters(); renderAll(); switchTab('grid');
+  toast(`✓ ${Object.keys(DB.bins).length} Bins, ${result.meta.totalRows} HUs imported (custom mapping)`, 'ok');
+  _pendingImport = null;
+}
+
+function cancelColMap() {
+  document.getElementById('colMapOverlay').style.display = 'none';
+  _pendingImport = null;
+  toast('Import cancelled', 'info');
+}
+
+// ── MAIN PARSE ENTRY POINT ────────────────────────────────────────────────────
+function parseXLSX(arrayBuffer) {
+  let wb;
+  try { wb = XLSX.read(arrayBuffer, { type: 'array', raw: true }); }
+  catch(e) { return { error: 'read_failed' }; }
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  if (!ws) return { error: 'empty_sheet' };
+  const detected = detectHeaderRow(ws);
+  if (!detected || !detected.dataRows.length) return { error: 'no_data' };
+  const { headerRowNum, headerKeys, dataRows } = detected;
+  const mapping = buildAutoMapping(headerKeys);
+  if (allRequiredMapped(mapping)) {
+    const result = parseWithMapping(dataRows, mapping);
+    return { ok: true, result, headerRowNum };
+  }
+  return { needsMapping: true, headerRowNum, headerKeys, dataRows };
+}
+
+function importXLSX(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!/\.(xlsx|xls)$/i.test(file.name)) {
+    toast('XLSX or XLS file required (.xlsx / .xls)', 'err'); input.value = ''; return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const parsed = parseXLSX(e.target.result);
+    if (!parsed || parsed.error) {
+      toast(`Import failed — ${(parsed && parsed.error) || 'unknown error'}`, 'err'); return;
+    }
+    if (parsed.needsMapping) {
+      _pendingImport = { ...parsed, filename: file.name };
+      toast('Column names not recognized — please map columns manually', 'warn');
+      openColMapModal(_pendingImport); return;
+    }
+    if (parsed.ok) {
+      DB.bins = parsed.result.bins;
+      DB.meta = { ...parsed.result.meta, filename: file.name };
+      saveToStorage(); refreshFilters(); renderAll(); switchTab('grid');
+      const note = parsed.headerRowNum > 1 ? ` (header at row ${parsed.headerRowNum})` : '';
+      toast(`✓ ${Object.keys(DB.bins).length} Bins, ${parsed.result.meta.totalRows} HUs imported from ${file.name}${note}`, 'ok');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+  input.value = '';
+}
+
+/* ═══════════════════════════════════════════════
+   EXPORT CSV
+═══════════════════════════════════════════════ */
+function exportCSV() {
+  if (!Object.keys(DB.bins).length) { toast('No data to export', 'warn'); return; }
+  const header = ['Storage Bin','Storage Unit','Material','Storage Type','Total Stock','Base Unit of Measure','Last stock placement','Time','Duration','Transfer order no.','Plant','Available stock','SLED/BBD'];
+  const rows = [header.join(',')];
+  Object.values(DB.bins).flat().forEach(hu => {
+    rows.push([hu.bin,hu.hu,hu.mat,hu.stype,hu.qty,hu.unit,hu.grDate,hu.grTime,hu.duration,hu.toNo,hu.plant,hu.avail,hu.sled].join(','));
+  });
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `LX03_export_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  toast('CSV export complete', 'ok');
+}
+
+/* ═══════════════════════════════════════════════
+   FILTERS
+═══════════════════════════════════════════════ */
+function refreshFilters() {
+  const bins = Object.keys(DB.bins);
+
+  // Aisles from structured bins (first 2 chars = Aisle)
+  const aisles = [...new Set(
+    bins.filter(b => /^\d{4}\.\d{2}\.\d+$/.test(b)).map(b => b.slice(0, 2))
+  )].sort();
+  const aisleSel = document.getElementById('filterAisle');
+  const aisleVal = aisleSel.value;
+  aisleSel.innerHTML = '<option value="">All Aisles</option>' +
+    aisles.map(a => `<option value="${a}"${a === aisleVal ? ' selected' : ''}>Aisle ${a}</option>`).join('');
+
+  // VLM machines
+  const machines = [...new Set(
+    bins.filter(isVLMBin).map(b => parseVLMBin(b).machine)
+  )].sort((a, b) => a - b);
+  const machineSel = document.getElementById('filterMachine');
+  const machineVal = machineSel.value;
+  machineSel.innerHTML = '<option value="">All Machines</option>' +
+    machines.map(m => `<option value="${m}"${String(m) === machineVal ? ' selected' : ''}>Machine ${m}</option>`).join('');
+
+  // Storage types
+  const stypes = [...new Set(Object.values(DB.bins).flat().map(h => h.stype))].sort();
+  const stSel = document.getElementById('filterSType');
+  const stVal = stSel.value;
+  stSel.innerHTML = '<option value="">All Storage Types</option>' +
+    stypes.map(s => `<option value="${s}"${s === stVal ? ' selected' : ''}>Type ${s}</option>`).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════ */
+let searchTerm = '';
+function onSearch() {
+  searchTerm = document.getElementById('searchBox').value.trim().toLowerCase();
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════
+   VLM BIN CLASSIFICATION
+═══════════════════════════════════════════════ */
+function isVLMBin(b) {
+  return /^V\d+\.\d+$/.test(b);
+}
+
+function parseVLMBin(b) {
+  // Format: V{machine}.{tray}  e.g. V6.01 → machine=6, tray=1
+  const [machinePart, trayPart] = b.split('.');
+  return {
+    machine: parseInt(machinePart.slice(1), 10),  // strip leading 'V'
+    tray:    parseInt(trayPart, 10)
+  };
+}
+
+/* ── VLM GRID ── */
+function renderVLMGrid() {
+  const pane          = document.getElementById('pane-vlm');
+  const filterMachine = document.getElementById('filterMachine').value;
+  const filterSType   = document.getElementById('filterSType').value;
+  const showEmpty     = document.getElementById('showEmpty').checked;
+
+  if (!Object.keys(DB.bins).length) {
+    pane.innerHTML = `<div style="text-align:center;padding:80px;color:var(--muted);">
+      <div style="font-size:48px;margin-bottom:12px;">🏗</div>
+      <div style="font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px;">No Data</div>
+      <div style="font-size:11px;">Import an SAP LX03 CSV file first.</div>
+    </div>`;
+    return;
+  }
+
+  let vlmBins = Object.keys(DB.bins).filter(isVLMBin);
+
+  if (filterMachine) vlmBins = vlmBins.filter(b => parseVLMBin(b).machine === parseInt(filterMachine));
+  if (filterSType)   vlmBins = vlmBins.filter(b => DB.bins[b].some(h => h.stype === filterSType));
+  if (searchTerm)    vlmBins = vlmBins.filter(b => {
+    if (b.toLowerCase().includes(searchTerm)) return true;
+    return DB.bins[b].some(h =>
+      h.hu.toLowerCase().includes(searchTerm) || h.mat.toLowerCase().includes(searchTerm)
+    );
+  });
+  if (!showEmpty) vlmBins = vlmBins.filter(b => DB.bins[b].some(h => h.qty > 0));
+
+  // Group by machine number
+  const grouped = {};
+  vlmBins.forEach(b => {
+    const { machine } = parseVLMBin(b);
+    if (!grouped[machine]) grouped[machine] = [];
+    grouped[machine].push(b);
+  });
+
+  const machines = Object.keys(grouped).map(Number).sort((a,b) => a - b);
+  if (!machines.length) {
+    pane.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">No VLM bins match the current filter</div>`;
+    return;
+  }
+
+  let html = '';
+
+  machines.forEach(machine => {
+    const bins = grouped[machine].sort((a, b) => parseVLMBin(a).tray - parseVLMBin(b).tray);
+    const machineHUs  = bins.flatMap(b => DB.bins[b] || []);
+    const totalUnits  = machineHUs.reduce((s, h) => s + (h.qty || 0), 0);
+    const occupiedBins= bins.filter(b => DB.bins[b].some(h => h.qty > 0)).length;
+    const uniqMats    = new Set(machineHUs.map(h => h.mat).filter(m => m && m !== '<<empty>>')).size;
+
+    html += `<div class="vlm-machine-block">
+      <div class="vlm-machine-hdr">
+        <span class="vlm-machine-label">VLM</span>
+        <h3>Machine ${machine}</h3>
+        <span class="section-stat">
+          ${occupiedBins} / ${bins.length} trays occupied &nbsp;·&nbsp;
+          ${totalUnits.toLocaleString()} units &nbsp;·&nbsp;
+          ${uniqMats} part numbers
+        </span>
+      </div>
+      <div class="vlm-tray-grid">`;
+
+    bins.forEach(b => {
+      const { tray } = parseVLMBin(b);
+      const items     = DB.bins[b] || [];
+      const filtItems = filterSType ? items.filter(h => h.stype === filterSType) : items;
+      const showItems = searchTerm ? filtItems.filter(h =>
+        h.hu.toLowerCase().includes(searchTerm) ||
+        h.mat.toLowerCase().includes(searchTerm) ||
+        b.toLowerCase().includes(searchTerm)
+      ) : filtItems;
+      const hasStock   = items.some(h => h.qty > 0);
+      const isHighlight= searchTerm && (b.toLowerCase().includes(searchTerm) || showItems.length > 0);
+
+      let cls = 'vlm-tray-cell';
+      if (!hasStock) cls += ' empty';
+      else           cls += ' has-items';
+      if (isHighlight) cls += ' highlight';
+
+      const trayLabel = `T${String(tray).padStart(2,'0')}`;
+
+      html += `<div class="${cls}" data-bin="${b}"
+        ondragover="binDragOver(event,this)"
+        ondragleave="this.classList.remove('drag-over')"
+        ondrop="binDrop(event,this,'${b}')">
+        <div class="vlm-tray-hdr">
+          <span class="vlm-tray-id">${trayLabel} · ${b}</span>
+          <span style="display:flex;align-items:center;gap:4px;">
+            <span class="vlm-tray-cnt">${filtItems.filter(h=>h.qty>0).length > 0 ? filtItems.filter(h=>h.qty>0).length+'×' : ''}</span>
+            <button class="bin-add-btn" onclick="openAddHUModal('${b}')" title="Add HU to tray ${trayLabel}">＋</button>
+          </span>
+        </div>
+        <div class="hu-list">`;
+
+      const SHOW = 4;
+      const displayItems = showItems.length ? showItems : filtItems;
+      displayItems.slice(0, SHOW).forEach(hu => {
+        html += renderHUTag(hu);
+      });
+      if (displayItems.length > SHOW) {
+        html += `<span class="more-badge" onclick="openBinModal('${b}')">+${displayItems.length - SHOW} more</span>`;
+      }
+      html += `</div></div>`;
+    });
+
+    html += `</div></div>`; // tray-grid + machine-block
+  });
+
+  pane.innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════
+   BIN CLASSIFICATION
+═══════════════════════════════════════════════ */
+function isStructuredBin(b) {
+  return /^\d{4}\.\d{2}\.\d+$/.test(b);
+}
+
+function parseBin(b) {
+  // Format: AABB.SC.L
+  //   AA = Aisle  (chars 0-1)
+  //   BB = Bay    (chars 2-3)
+  //   SC = Section (after first dot)
+  //   L  = Level  (after second dot)
+  const p = b.split('.');
+  return {
+    aisle:   b.slice(0, 2),  // '01'
+    bay:     b.slice(2, 4),  // '01'
+    section: p[1],            // '02'
+    level:   p[2]             // '3'
+  };
+}
+
+/* ═══════════════════════════════════════════════
+   DASHBOARD
+═══════════════════════════════════════════════ */
+let _dashScope = 'all'; // 'all' | 'wh' | 'vlm' | 'other'
+let _charts = {};
+
+function setDashScope(scope) {
+  _dashScope = scope;
+  ['all','wh','vlm','other'].forEach(s => {
+    document.getElementById(`scope-${s}`).classList.toggle('active', s === scope);
+  });
+  renderDash();
+}
+
+function scopeFilter(binId) {
+  if (_dashScope === 'all')   return true;
+  if (_dashScope === 'wh')    return /^\d{4}\.\d{2}\.\d+$/.test(binId);
+  if (_dashScope === 'vlm')   return isVLMBin(binId);
+  if (_dashScope === 'other') return !/^\d{4}\.\d{2}\.\d+$/.test(binId) && !isVLMBin(binId);
+  return true;
+}
+
+function destroyChart(id) {
+  if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
+}
+
+const CHART_DEFAULTS = {
+  color: '#cdd6f4',
+  plugins: { legend: { display: false }, tooltip: {
+    backgroundColor: '#1e2535', borderColor: '#2d3958', borderWidth: 1,
+    titleColor: '#cdd6f4', bodyColor: '#8899bb',
+    titleFont: { family: "'IBM Plex Mono'" }, bodyFont: { family: "'IBM Plex Mono'" }
+  }},
+  scales: {
+    x: { ticks: { color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 9 } },
+         grid: { color: 'rgba(45,57,88,.5)' }, border: { color: '#2d3958' } },
+    y: { ticks: { color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 9 } },
+         grid: { color: 'rgba(45,57,88,.5)' }, border: { color: '#2d3958' } }
+  }
+};
+
+function renderDash() {
+  // Apply scope filter
+  const scopedBins = Object.entries(DB.bins).filter(([bin]) => scopeFilter(bin));
+  const allHU = scopedBins.flatMap(([, hus]) => hus);
+
+  if (!allHU.length) {
+    ['kpi-units','kpi-skus','kpi-bins','kpi-avg'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+    });
+    return;
+  }
+
+  const scopeLabel = { all: 'all bins', wh: 'warehouse bins', vlm: 'VLM trays', other: 'other bins' }[_dashScope];
+
+  /* KPI */
+  const totalUnits   = allHU.reduce((s, h) => s + (h.qty || 0), 0);
+  const uniqueSKUs   = new Set(allHU.map(h => h.mat).filter(Boolean)).size;
+  const occupiedBins = scopedBins.filter(([, hus]) => hus.some(h => h.qty > 0)).length;
+  const avgUnits     = occupiedBins ? (totalUnits / occupiedBins).toFixed(1) : '0';
+  let latestMs = 0;
+  allHU.forEach(h => { if (h.grDateMs && h.grDateMs > latestMs) latestMs = h.grDateMs; });
+  const latestDate = latestMs ? new Date(latestMs).toLocaleDateString('en-US') : '';
+
+  document.getElementById('kpi-units').textContent     = totalUnits.toLocaleString();
+  document.getElementById('kpi-units-sub').textContent = scopeLabel;
+  document.getElementById('kpi-skus').textContent      = uniqueSKUs.toLocaleString();
+  document.getElementById('kpi-bins').textContent      = occupiedBins.toLocaleString();
+  document.getElementById('kpi-avg').textContent       = avgUnits;
+  document.getElementById('kpi-date').textContent      = latestDate || '—';
+  document.getElementById('kpi-file').textContent      = DB.meta.filename || '—';
+
+  /* Chart 1: Warehouse → Aisle/Level, VLM → Machine/Tray, Other → flat */
+  const isWH  = _dashScope === 'wh'  || _dashScope === 'all';
+  const isVLM = _dashScope === 'vlm';
+
+  if (_dashScope === 'vlm') {
+    // VLM: group by machine, stack by nothing (single dataset)
+    document.getElementById('chart-aisle-title').textContent = 'INVENTORY BY VLM MACHINE';
+    const machineMap = {};
+    scopedBins.forEach(([bin, hus]) => {
+      const { machine } = parseVLMBin(bin);
+      machineMap[machine] = (machineMap[machine] || 0) + hus.reduce((s, h) => s + h.qty, 0);
+    });
+    const mLabels = Object.keys(machineMap).map(Number).sort((a,b)=>a-b).map(m=>`V${m}`);
+    const mData   = Object.entries(machineMap).sort((a,b)=>+a[0]-+b[0]).map(([,v])=>v);
+    destroyChart('aisle');
+    _charts['aisle'] = new Chart(document.getElementById('chart-aisle'), {
+      type: 'bar',
+      data: { labels: mLabels, datasets: [{ data: mData, backgroundColor: '#a855f7bb', borderRadius: 3 }] },
+      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: { ...CHART_DEFAULTS.plugins, legend: { display: false } } }
+    });
+  } else {
+    // WH or All: group by aisle, stack by level (only structured bins)
+    const chartLabel = _dashScope === 'wh' ? 'INVENTORY BY AISLE · STACKED BY LEVEL'
+                                            : 'INVENTORY BY AISLE (WH) · STACKED BY LEVEL';
+    document.getElementById('chart-aisle-title').textContent = chartLabel;
+    const structBins = scopedBins.filter(([bin]) => /^\d{4}\.\d{2}\.\d+$/.test(bin));
+    const aisleMap = {};
+    structBins.forEach(([b, hus]) => {
+      const { aisle, level } = parseBin(b);
+      if (!aisleMap[aisle]) aisleMap[aisle] = {};
+      aisleMap[aisle][level] = (aisleMap[aisle][level] || 0) + hus.reduce((s,h)=>s+h.qty,0);
+    });
+    const aisleLabels = Object.keys(aisleMap).sort();
+    const allLevels = [...new Set(structBins.map(([b]) => parseBin(b).level))].sort((a,b)=>+a-+b);
+    const levelColors = ['#3b82f6','#22c55e','#f59e0b','#a855f7','#06b6d4','#ef4444'];
+    const aisleDatasets = allLevels.map((lv, i) => ({
+      label: `L${lv}`,
+      data: aisleLabels.map(a => aisleMap[a]?.[lv] || 0),
+      backgroundColor: levelColors[i % levelColors.length] + 'cc',
+      borderRadius: 2, borderSkipped: false,
+    }));
+    destroyChart('aisle');
+    _charts['aisle'] = new Chart(document.getElementById('chart-aisle'), {
+      type: 'bar',
+      data: { labels: aisleLabels, datasets: aisleDatasets },
+      options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+        plugins: { ...CHART_DEFAULTS.plugins,
+          legend: { display: true, position: 'bottom', labels: {
+            color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 8 }, boxWidth: 8, padding: 8
+          }}
+        },
+        scales: { x: { ...CHART_DEFAULTS.scales.x, stacked: true },
+                  y: { ...CHART_DEFAULTS.scales.y, stacked: true } }
+      }
+    });
+  }
+
+  /* Chart 2: Top 10 Part Numbers by Units */
+  const matTotals = {};
+  allHU.forEach(h => {
+    if (!h.mat || h.mat === '<<empty>>') return;
+    matTotals[h.mat] = (matTotals[h.mat] || 0) + h.qty;
+  });
+  const top10 = Object.entries(matTotals).sort((a,b) => b[1]-a[1]).slice(0,10);
+  destroyChart('top10');
+  _charts['top10'] = new Chart(document.getElementById('chart-top10'), {
+    type: 'bar',
+    data: {
+      labels: top10.map(([m]) => m),
+      datasets: [{ data: top10.map(([,v]) => v), backgroundColor: '#3b82f6bb', borderRadius: 3 }]
+    },
+    options: { ...CHART_DEFAULTS, responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      scales: {
+        x: { ...CHART_DEFAULTS.scales.x },
+        y: { ticks: { color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 8 } },
+             grid: { color: 'rgba(45,57,88,.5)' }, border: { color: '#2d3958' } }
+      }
+    }
+  });
+
+  /* Chart 3: Aging dual axis */
+  const bucketKeys = ['< 7d', '7–14d', '14–30d', '30–60d', '60d+'];
+  const bucketHU   = { '< 7d': 0, '7–14d': 0, '14–30d': 0, '30–60d': 0, '60d+': 0 };
+  const bucketQty  = { '< 7d': 0, '7–14d': 0, '14–30d': 0, '30–60d': 0, '60d+': 0 };
+  allHU.forEach(h => {
+    // Primary: grDateMs. Fallback: parse grDate string (storage data may have null grDateMs)
+    let ms = h.grDateMs;
+    if (!ms && h.grDate) {
+      const p = new Date(h.grDate);
+      if (!isNaN(p)) ms = p.getTime();
+    }
+    if (!ms) return;
+    // Future-dated records (entry error / timezone) -> clamp to < 7d bucket
+    const days = Math.max(0, (Date.now() - ms) / 86400000);
+    const key = days < 7 ? '< 7d' : days < 14 ? '7–14d' : days < 30 ? '14–30d' : days < 60 ? '30–60d' : '60d+';
+    bucketHU[key]++;
+    bucketQty[key] += (h.qty || 0);
+  });
+  const agingBarColors  = ['#22c55eaa','#3b82f6aa','#f59e0baa','#ef4444aa','#a855f7aa'];
+  const totalAgingHU    = Object.values(bucketHU).reduce((s, v) => s + v, 0);
+  const totalAgingQty   = Object.values(bucketQty).reduce((s, v) => s + v, 0);
+  const agingEmptyEl    = document.getElementById('aging-empty');
+  agingEmptyEl.style.display = totalAgingHU === 0 ? 'flex' : 'none';
+  destroyChart('aging');
+  _charts['aging'] = new Chart(document.getElementById('chart-aging'), {
+    type: 'bar',
+    data: {
+      labels: bucketKeys,
+      datasets: [
+        { label: 'HU Count', type: 'bar',
+          data: bucketKeys.map(k => bucketHU[k]),
+          backgroundColor: agingBarColors, borderRadius: 3, yAxisID: 'yLeft', order: 2 },
+        { label: 'Total Units', type: 'line',
+          data: bucketKeys.map(k => bucketQty[k]),
+          borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,.08)',
+          borderWidth: 2, pointBackgroundColor: '#f59e0b', pointRadius: 4, pointHoverRadius: 6,
+          tension: 0.3, fill: true, yAxisID: 'yRight', order: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: {
+          color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 8 }, boxWidth: 8, padding: 8
+        }},
+        tooltip: {
+          backgroundColor: '#1e2535', borderColor: '#2d3958', borderWidth: 1,
+          titleColor: '#cdd6f4', bodyColor: '#8899bb',
+          titleFont: { family: "'IBM Plex Mono'" }, bodyFont: { family: "'IBM Plex Mono'" },
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString()}` }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 9 } },
+             grid: { color: 'rgba(45,57,88,.5)' }, border: { color: '#2d3958' } },
+        yLeft: { position: 'left',
+          suggestedMin: 0, suggestedMax: Math.max(...Object.values(bucketHU), 1),
+          ticks: { color: '#6272a4', font: { family: "'IBM Plex Mono'", size: 9 },
+                   callback: v => Number.isInteger(v) ? v : null },
+          grid: { color: 'rgba(45,57,88,.5)' }, border: { color: '#2d3958' },
+          title: { display: true, text: 'HU Count', color: '#6272a4',
+                   font: { family: "'IBM Plex Mono'", size: 8 } }
+        },
+        yRight: { position: 'right',
+          suggestedMin: 0, suggestedMax: Math.max(totalAgingQty, 1),
+          ticks: { color: '#f59e0b', font: { family: "'IBM Plex Mono'", size: 9 },
+            callback: v => v >= 1e6 ? (v/1e6).toFixed(1)+'M' : v >= 1e3 ? (v/1e3).toFixed(0)+'K' : v
+          },
+          grid: { drawOnChartArea: false }, border: { color: '#2d3958' },
+          title: { display: true, text: 'Total Units', color: '#f59e0b',
+                   font: { family: "'IBM Plex Mono'", size: 8 } }
+        }
+      }
+    }
+  });
+
+  renderDashTable();
+  renderAisleUtil();
+  renderPNTable();
+}
+
+function renderDashTable() {
+  const term = (document.getElementById('dashSearch')?.value || '').trim().toLowerCase();
+  const allHU = Object.entries(DB.bins)
+    .filter(([bin]) => scopeFilter(bin))
+    .flatMap(([bin, hus]) => hus.map(h => ({ ...h, _bin: bin })));
+
+  const filtered = term
+    ? allHU.filter(h =>
+        (h.mat || '').toLowerCase().includes(term) ||
+        (h._bin || '').toLowerCase().includes(term)
+      )
+    : allHU;
+
+  // Aggregate totals across ALL filtered rows (not just the displayed 1,000)
+  const totalQty   = filtered.reduce((s, h) => s + (h.qty || 0), 0);
+  const totalHUs   = filtered.length;
+  const uniqueBins = new Set(filtered.map(h => h._bin)).size;
+
+  // Update title and summary
+  const titleEl   = document.getElementById('dash-table-title');
+  const summaryEl = document.getElementById('dash-summary');
+  if (titleEl) {
+    titleEl.textContent = term
+      ? `DETAIL · "${term.toUpperCase()}" — ${totalHUs} HUs`
+      : `DETAIL · ALL ROWS`;
+  }
+  if (summaryEl) {
+    if (term) {
+      summaryEl.innerHTML =
+        `<span style="color:var(--acc2);font-weight:700;font-size:11px;">${totalQty.toLocaleString()} units total</span>` +
+        `<span style="color:var(--muted);margin-left:8px;">${totalHUs} HUs · ${uniqueBins} bins</span>` +
+        (totalHUs > 1000 ? `<span style="color:var(--amber);margin-left:8px;">showing first 1,000 rows</span>` : '');
+    } else {
+      summaryEl.textContent = '';
+    }
+  }
+
+  const rows  = filtered.slice(0, 1000);
+  const tbody = document.getElementById('dash-tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = rows.map(h => {
+    const p = isStructuredBin(h._bin) ? parseBin(h._bin) : null;
+    const dwell = calcDwell(h);
+    const dwCls = dwellClass(h);
+    return `<tr>
+      <td style="color:var(--amber);font-weight:600;">${h.mat || '—'}</td>
+      <td style="color:var(--muted2);">${h._bin}</td>
+      <td>${p ? p.aisle : '—'}</td>
+      <td>${p ? p.bay : '—'}</td>
+      <td>${p ? p.level : '—'}</td>
+      <td style="color:var(--acc2);font-weight:600;">${h.qty?.toLocaleString() || '—'}</td>
+      <td style="color:var(--muted);font-size:9px;">${h.grDate || '—'}</td>
+      <td class="${dwCls}" style="font-weight:600;">${dwell || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─── AISLE UTILIZATION ─────────────────────────── */
+function renderAisleUtil() {
+  const grid = document.getElementById('aisle-util-grid');
+  if (!grid) return;
+
+  // Only structured warehouse bins
+  const structEntries = Object.entries(DB.bins).filter(([b]) => isStructuredBin(b));
+  if (!structEntries.length) {
+    grid.innerHTML = '<div style="font-size:10px;color:var(--muted);padding:20px;">No warehouse bins loaded</div>';
+    return;
+  }
+
+  // Group by aisle: count total bins and occupied bins
+  const aisleMap = {}; // { aisle: { total, occupied, hu, qty } }
+  structEntries.forEach(([binId, hus]) => {
+    const { aisle } = parseBin(binId);
+    if (!aisleMap[aisle]) aisleMap[aisle] = { total: 0, occupied: 0, hu: 0, qty: 0 };
+    aisleMap[aisle].total++;
+    const hasStock = hus.some(h => h.qty > 0);
+    if (hasStock) aisleMap[aisle].occupied++;
+    aisleMap[aisle].hu  += hus.length;
+    aisleMap[aisle].qty += hus.reduce((s, h) => s + (h.qty || 0), 0);
+  });
+
+  const aisles = Object.keys(aisleMap).sort();
+  grid.innerHTML = aisles.map(a => {
+    const { total, occupied, hu, qty } = aisleMap[a];
+    const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
+    const pctCls = pct >= 80 ? 'high' : pct >= 50 ? 'mid' : 'low';
+    const barColor = pct >= 80 ? 'var(--red)' : pct >= 50 ? 'var(--amber)' : 'var(--green)';
+    return `<div class="aisle-util-row">
+      <div class="aisle-util-label">Aisle ${a}</div>
+      <div class="aisle-util-bar-wrap">
+        <div class="aisle-util-bar" style="width:${pct}%;background:${barColor};"></div>
+      </div>
+      <div class="aisle-util-stats">
+        <span class="aisle-util-pct ${pctCls}">${pct}%</span>
+        <span>${occupied}/${total} bins</span>
+        <span>${hu} HUs</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── PART NUMBER HU COUNT ──────────────────────── */
+function renderPNTable() {
+  const tbody = document.getElementById('pn-tbody');
+  if (!tbody) return;
+  const term = (document.getElementById('pnSearch')?.value || '').trim().toLowerCase();
+
+  // Aggregate by part number across scope-filtered bins
+  const pnMap = {}; // { mat: { huCount, bins: Set, qty } }
+  Object.entries(DB.bins)
+    .filter(([bin]) => scopeFilter(bin))
+    .forEach(([bin, hus]) => {
+      hus.forEach(h => {
+        if (!h.mat || h.mat === '<<empty>>') return;
+        if (!pnMap[h.mat]) pnMap[h.mat] = { huCount: 0, bins: new Set(), qty: 0 };
+        pnMap[h.mat].huCount++;
+        pnMap[h.mat].bins.add(bin);
+        pnMap[h.mat].qty += (h.qty || 0);
+      });
+    });
+
+  let entries = Object.entries(pnMap).map(([mat, d]) => ({
+    mat, huCount: d.huCount, binCount: d.bins.size, qty: d.qty
+  }));
+
+  if (term) entries = entries.filter(e => e.mat.toLowerCase().includes(term));
+  entries.sort((a, b) => b.huCount - a.huCount);
+
+  const maxHU = entries.length ? entries[0].huCount : 1;
+
+  tbody.innerHTML = entries.slice(0, 200).map(e => {
+    const barW = Math.round((e.huCount / maxHU) * 100);
+    return `<tr>
+      <td style="color:var(--amber);font-weight:600;">${e.mat}</td>
+      <td style="color:var(--acc2);font-weight:700;">${e.huCount}</td>
+      <td style="color:var(--muted2);">${e.binCount}</td>
+      <td style="color:var(--text);">${e.qty.toLocaleString()}</td>
+      <td style="width:120px;">
+        <span class="pn-bar" style="width:${barW}%;max-width:110px;"></span>
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:20px;">No data</td></tr>`;
+}
+
+/* ═══════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════ */
+function renderAll() {
+  updateChips();
+  if (_activeTab === 'dash')  renderDash();
+  if (_activeTab === 'grid')  renderGrid();
+  if (_activeTab === 'vlm')   renderVLMGrid();
+  if (_activeTab === 'other') renderOther();
+}
+
+function updateChips() {
+  const allHU = Object.values(DB.bins).flat();
+  const bins  = Object.keys(DB.bins);
+  const mats  = [...new Set(allHU.map(h => h.mat).filter(Boolean))];
+  document.getElementById('chip-bins').textContent = `${bins.length} Bins`;
+  document.getElementById('chip-hu').textContent   = `${allHU.length} HUs`;
+  document.getElementById('chip-mats').textContent = `${mats.length} Part Numbers`;
+  document.getElementById('chip-ts').textContent   = DB.meta.filename || 'No file';
+}
+
+/* ── GRID ── */
+function renderGrid() {
+  const pane = document.getElementById('pane-grid');
+  const filterAisle = document.getElementById('filterAisle').value;
+  const filterSType = document.getElementById('filterSType').value;
+  const showEmpty   = document.getElementById('showEmpty').checked;
+  const sortBy      = document.getElementById('sortBy').value;
+
+  if (!Object.keys(DB.bins).length) {
+    pane.innerHTML = `<div style="text-align:center;padding:80px 20px;color:var(--muted);">
+      <div style="font-size:48px;margin-bottom:12px;">📦</div>
+      <div style="font-family:var(--display);font-size:20px;font-weight:700;margin-bottom:8px;">No Data</div>
+      <div style="font-size:11px;">Use "Import CSV" or the Import tab to load an SAP LX03 file.</div>
+    </div>`;
+    return;
+  }
+
+  // Get structured bins
+  let structBins = Object.keys(DB.bins).filter(isStructuredBin);
+
+  // Filter by aisle
+  if (filterAisle) structBins = structBins.filter(b => parseBin(b).aisle === filterAisle);
+
+  // Filter by storage type
+  if (filterSType) {
+    structBins = structBins.filter(b => DB.bins[b].some(h => h.stype === filterSType));
+  }
+
+  // Search filter
+  if (searchTerm) {
+    structBins = structBins.filter(b => {
+      if (b.toLowerCase().includes(searchTerm)) return true;
+      return DB.bins[b].some(h =>
+        h.hu.toLowerCase().includes(searchTerm) ||
+        h.mat.toLowerCase().includes(searchTerm)
+      );
+    });
+  }
+
+  if (!showEmpty) {
+    structBins = structBins.filter(b => DB.bins[b] && DB.bins[b].length > 0);
+  }
+
+  // Group: Aisle → Bay → [bins]
+  const grouped = {}; // { aisle: { bay: [binIds] } }
+  structBins.forEach(b => {
+    const { aisle, bay } = parseBin(b);
+    if (!grouped[aisle]) grouped[aisle] = {};
+    if (!grouped[aisle][bay]) grouped[aisle][bay] = [];
+    grouped[aisle][bay].push(b);
+  });
+
+  const aisles = Object.keys(grouped).sort();
+
+  let html = '';
+
+  aisles.forEach(aisle => {
+    const bays = Object.keys(grouped[aisle]).sort();
+    const aisleHUs = bays.flatMap(bay => grouped[aisle][bay].flatMap(b => DB.bins[b] || []));
+    const aisleMats = [...new Set(aisleHUs.map(h => h.mat).filter(Boolean))].length;
+
+    html += `<div class="section-block">
+      <div class="section-hdr">
+        <h3>Aisle ${aisle}</h3>
+        <span class="section-stat">${aisleHUs.length} HUs · ${aisleMats} Part Numbers · ${bays.length} Bays</span>
+      </div>`;
+
+    bays.forEach(bay => {
+      const bins = grouped[aisle][bay];
+      // All sections & levels in this Aisle+Bay block
+      const sections = [...new Set(bins.map(b => parseBin(b).section))].sort();
+      const levels   = [...new Set(bins.map(b => parseBin(b).level))].sort((a, b) => +a - +b);
+
+      html += `<div style="margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:700;color:var(--muted2);letter-spacing:1px;margin-bottom:5px;">
+          BAY ${bay}
+          <span style="font-weight:400;color:var(--muted);margin-left:6px;">${bins.length} bins</span>
+        </div>`;
+
+      if (sections.length && levels.length) {
+        // Column headers (Sections)
+        html += `<div style="display:grid;grid-template-columns:32px repeat(${sections.length},1fr);gap:4px;margin-bottom:2px;">`;
+        html += `<div></div>`;
+        sections.forEach(sec => {
+          html += `<div style="text-align:center;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px;">SEC ${sec}</div>`;
+        });
+        html += `</div>`;
+
+        // Rows = Levels (descending = top shelf first visually)
+        [...levels].reverse().forEach(level => {
+          html += `<div style="display:grid;grid-template-columns:32px repeat(${sections.length},1fr);gap:4px;margin-bottom:4px;">`;
+          html += `<div style="display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--muted);">L${level}</div>`;
+          sections.forEach(sec => {
+            const binId = `${aisle}${bay}.${sec}.${level}`;
+            const items = (DB.bins[binId] || []);
+            const filtItems = filterSType ? items.filter(h => h.stype === filterSType) : items;
+            const searchItems = searchTerm ? filtItems.filter(h =>
+              h.hu.toLowerCase().includes(searchTerm) ||
+              h.mat.toLowerCase().includes(searchTerm) ||
+              binId.toLowerCase().includes(searchTerm)
+            ) : filtItems;
+
+            const hasData = DB.bins[binId] && DB.bins[binId].length > 0;
+            const isHighlight = searchTerm && (binId.toLowerCase().includes(searchTerm) || searchItems.length > 0);
+
+            let cls = 'bin-cell';
+            if (!hasData) cls += ' empty';
+            else cls += ' has-items';
+            if (isHighlight) cls += ' highlight';
+
+            html += `<div class="${cls}" data-bin="${binId}"
+              ondragover="binDragOver(event,this)"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="binDrop(event,this,'${binId}')">`;
+
+            html += `<div class="bin-hdr">
+              <span class="bin-id" onclick="openBinModal('${binId}')" style="cursor:pointer;" title="View all HUs">${binId}</span>
+              <span style="display:flex;align-items:center;gap:4px;">
+                <span class="bin-cnt">${filtItems.length > 0 ? filtItems.length + '×' : ''}</span>
+                <button class="bin-add-btn" onclick="openAddHUModal('${binId}')" title="Add HU to this bin">＋</button>
+              </span>
+            </div>`;
+
+            const SHOW = 3;
+            const show = searchItems.length ? searchItems : filtItems;
+            html += `<div class="hu-list">`;
+            show.slice(0, SHOW).forEach(hu => {
+              html += renderHUTag(hu);
+            });
+            if (show.length > SHOW) {
+              html += `<span class="more-badge" onclick="openBinModal('${binId}')">+${show.length - SHOW} more</span>`;
+            }
+            html += `</div>`;
+            html += `</div>`;
+          });
+          html += `</div>`;
+        });
+      }
+
+      html += `</div>`; // bay
+    });
+
+    html += `</div>`; // aisle
+  });
+
+  pane.innerHTML = html || `<div style="text-align:center;padding:60px;color:var(--muted);">No bins match the current filter</div>`;
+}
+
+function calcDwell(hu) {
+  // Use pre-computed epoch ms — avoids all browser Date string-parse ambiguity
+  const ms = hu.grDateMs;
+  if (!ms) return null;
+  const diffMs = Date.now() - ms;
+  if (diffMs < 0) return null;
+  const totalMins = Math.floor(diffMs / 60000);
+  const d = Math.floor(totalMins / 1440);
+  const h = Math.floor((totalMins % 1440) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h`;
+  return '< 1h';
+}
+
+function dwellClass(hu) {
+  const ms = hu.grDateMs;
+  if (!ms) return '';
+  const days = (Date.now() - ms) / 86400000;
+  if (days < 0) return '';
+  if (days >= 14) return 'dwell-red';
+  if (days >= 7)  return 'dwell-amber';
+  return 'dwell-ok';
+}
+
+function renderHUTag(hu) {
+  const cls = huClass(hu.stype);
+  const dwell = calcDwell(hu);
+  const dwCls = dwellClass(hu);
+  const huJson = JSON.stringify({hu: hu.hu, fromBin: hu.bin}).replace(/'/g, "&#39;");
+  return `<div class="hu-tag ${cls}" draggable="true"
+    data-hu='${huJson}'
+    ondragstart="huDragStart(event,this)"
+    ondragend="huDragEnd(this)">
+    <span class="hu-dot"></span>
+    <span class="hu-info" onclick="openHUModal(${JSON.stringify(hu.hu)})" style="cursor:pointer;flex:1;overflow:hidden;">
+      <span class="hu-no">${hu.hu || '—'}</span>
+      <span class="hu-mat">${hu.mat || '—'}</span>
+      ${dwell ? `<span class="hu-dwell ${dwCls}">⏱ ${dwell}</span>` : ''}
+    </span>
+    <span class="hu-qty">${hu.qty?.toLocaleString()}${hu.unit ? '&nbsp;' + hu.unit : ''}</span>
+    <span class="hu-actions" ondragstart="event.stopPropagation()">
+      <button class="hu-act-btn hu-act-edit" title="Edit quantity"
+        onclick="event.stopPropagation();openEditQtyModal(${JSON.stringify(hu.hu)},${JSON.stringify(hu.bin)})">✏</button>
+      <button class="hu-act-btn hu-act-del" title="Delete HU"
+        onclick="event.stopPropagation();deleteHU(${JSON.stringify(hu.hu)},${JSON.stringify(hu.bin)})">✕</button>
+    </span>
+  </div>`;
+}
+
+function huClass(stype) {
+  if (!stype) return 'tother';
+  if (stype === '001') return 't001';
+  if (stype === '002') return 't002';
+  if (stype === '003') return 't003';
+  if (stype === '007') return 't007';
+  return 'tother';
+}
+
+/* ── OTHER BINS ── */
+function renderOther() {
+  const pane = document.getElementById('pane-other');
+  const otherBins = Object.keys(DB.bins).filter(b => !isStructuredBin(b)).sort();
+
+  if (!otherBins.length) {
+    pane.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">No non-standard bins found</div>`;
+    return;
+  }
+
+  const rows = otherBins.flatMap(b => DB.bins[b].map(h => ({...h, _bin: b})));
+  const filtered = searchTerm
+    ? rows.filter(r => r._bin.toLowerCase().includes(searchTerm) || r.hu.toLowerCase().includes(searchTerm) || r.mat.toLowerCase().includes(searchTerm))
+    : rows;
+
+  pane.innerHTML = `
+    <div style="margin-bottom:10px;font-size:11px;color:var(--muted2);">
+      ${otherBins.length} non-standard bins · ${rows.length} HUs
+      (TRAILER, TENT, QUALITY, numeric IDs and other irregular locations)
+    </div>
+    <table class="other-table">
+      <thead><tr>
+        <th>Bin</th><th>HU Number</th><th>Part Number</th>
+        <th>Storage Type</th><th>Qty</th><th>Unit</th>
+        <th>Loaded Date</th><th>TO No.</th><th>Plant</th>
+      </tr></thead>
+      <tbody>
+        ${filtered.map(r => `<tr>
+          <td style="font-weight:700;color:var(--muted2);">${r._bin}</td>
+          <td style="color:var(--acc2);font-size:10px;">${r.hu}</td>
+          <td style="color:var(--amber);">${r.mat}</td>
+          <td><span class="chip ${huClass(r.stype)}" style="font-size:8px;padding:1px 5px;">${r.stype}</span></td>
+          <td>${r.qty}</td><td style="color:var(--muted);">${r.unit}</td>
+          <td style="color:var(--muted);font-size:10px;">${r.grDate}</td>
+          <td style="color:var(--muted);font-size:10px;">${r.toNo}</td>
+          <td style="color:var(--muted);">${r.plant}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+/* ═══════════════════════════════════════════════
+   DRAG & DROP
+═══════════════════════════════════════════════ */
+function huDragStart(e, el) {
+  const data = JSON.parse(el.getAttribute('data-hu').replace(/&#39;/g, "'"));
+  _dragHU = data;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => el.classList.add('dragging'), 0);
+}
+
+function huDragEnd(el) {
+  el.classList.remove('dragging');
+  _dragHU = null;
+}
+
+function binDragOver(e, cell) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  cell.classList.add('drag-over');
+}
+
+function binDrop(e, cell, toBin) {
+  e.preventDefault();
+  cell.classList.remove('drag-over');
+  if (!_dragHU) return;
+  const { hu: huNo, fromBin } = _dragHU;
+  if (fromBin === toBin) return;
+  moveHU(huNo, fromBin, toBin);
+}
+
+function moveHU(huNo, fromBin, toBin) {
+  const src = DB.bins[fromBin];
+  if (!src) return;
+  const idx = src.findIndex(h => h.hu === huNo);
+  if (idx < 0) return;
+  const [hu] = src.splice(idx, 1);
+  hu.bin = toBin;
+  if (!DB.bins[toBin]) DB.bins[toBin] = [];
+  DB.bins[toBin].push(hu);
+  if (DB.bins[fromBin].length === 0) delete DB.bins[fromBin];
+  logChange('move', { hu: huNo, mat: hu.mat, fromBin, toBin });
+  document.getElementById('saveStatus').textContent = '* Unsaved changes';
+  toast(`${huNo}: ${fromBin} → ${toBin}`, 'info');
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════
+   HU CRUD
+═══════════════════════════════════════════════ */
+function deleteHU(huNo, binId) {
+  if (!confirm(`Delete HU ${huNo} from ${binId}?`)) return;
+  const arr = DB.bins[binId];
+  if (!arr) return;
+  const idx = arr.findIndex(h => h.hu === huNo);
+  if (idx < 0) return;
+  const [deletedHU] = arr.splice(idx, 1);
+  if (arr.length === 0) delete DB.bins[binId];
+  logChange('delete', { hu: huNo, mat: deletedHU.mat, bin: binId, qty: deletedHU.qty });
+  document.getElementById('saveStatus').textContent = '* Unsaved changes';
+  toast(`HU ${huNo} deleted`, 'warn');
+  renderAll();
+}
+
+function openEditQtyModal(huNo, binId) {
+  const arr = DB.bins[binId];
+  if (!arr) return;
+  const hu = arr.find(h => h.hu === huNo);
+  if (!hu) return;
+
+  document.getElementById('modal-title').textContent = `Edit Quantity · HU ${huNo}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="padding:8px 0;display:flex;flex-direction:column;gap:14px;">
+      <div style="font-size:10px;color:var(--muted2);">
+        <span style="color:var(--muted);">Bin:</span> ${binId} &nbsp;·&nbsp;
+        <span style="color:var(--muted);">Part:</span> ${hu.mat || '—'} &nbsp;·&nbsp;
+        <span style="color:var(--muted);">Current Qty:</span> <strong style="color:var(--acc2);">${hu.qty?.toLocaleString()} ${hu.unit}</strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <label style="font-size:10px;color:var(--muted2);white-space:nowrap;">New Quantity</label>
+        <input id="editQtyInput" type="number" min="0" value="${hu.qty}"
+          style="flex:1;background:var(--s2);border:1px solid var(--border2);border-radius:var(--r);
+                 color:var(--text);font-family:var(--mono);font-size:13px;padding:6px 10px;outline:none;"
+          onkeydown="if(event.key==='Enter')saveEditedQty('${huNo}','${binId}')">
+        <span style="font-size:10px;color:var(--muted);">${hu.unit || 'PC'}</span>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-acc" onclick="saveEditedQty('${huNo}','${binId}')">Save</button>
+      </div>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('editQtyInput')?.select(), 50);
+}
+
+function saveEditedQty(huNo, binId) {
+  const val = parseFloat(document.getElementById('editQtyInput')?.value);
+  if (isNaN(val) || val < 0) { toast('Invalid quantity', 'err'); return; }
+  const arr = DB.bins[binId];
+  if (!arr) return;
+  const hu = arr.find(h => h.hu === huNo);
+  if (!hu) return;
+  const old = hu.qty;
+  hu.qty = val;
+  hu.avail = val;
+  logChange('edit', { hu: huNo, bin: binId, mat: hu.mat, oldQty: old, newQty: val });
+  document.getElementById('saveStatus').textContent = '* Unsaved changes';
+  closeModal();
+  toast(`HU ${huNo}: ${old.toLocaleString()} → ${val.toLocaleString()} ${hu.unit}`, 'ok');
+  renderAll();
+}
+
+function openAddHUModal(binId) {
+  document.getElementById('modal-title').textContent = `Add HU · ${binId}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div style="padding:8px 0;display:flex;flex-direction:column;gap:12px;">
+      ${[
+        ['HU Number',  'addHU_hu',   'text',   '', '0012345678'],
+        ['Part Number','addHU_mat',  'text',   '', '25112076'],
+        ['Quantity',   'addHU_qty',  'number', '0','156'],
+        ['Unit',       'addHU_unit', 'text',   '', 'PC'],
+        ['Storage Type','addHU_stype','text',  '', '001'],
+      ].map(([label, id, type, min, ph]) => `
+        <div style="display:flex;align-items:center;gap:8px;">
+          <label style="font-size:10px;color:var(--muted2);width:110px;flex-shrink:0;">${label}</label>
+          <input id="${id}" type="${type}" ${min !== '' ? 'min="' + min + '"' : ''} placeholder="${ph}"
+            style="flex:1;background:var(--s2);border:1px solid var(--border);border-radius:var(--r);
+                   color:var(--text);font-family:var(--mono);font-size:12px;padding:5px 8px;outline:none;"
+            onfocus="this.style.borderColor='var(--acc)'" onblur="this.style.borderColor='var(--border)'">
+        </div>`).join('')}
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:4px;">
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-green" onclick="saveNewHU('${binId}')">＋ Add HU</button>
+      </div>
+    </div>`;
+  document.getElementById('modal').style.display = 'flex';
+  setTimeout(() => document.getElementById('addHU_hu')?.focus(), 50);
+}
+
+function saveNewHU(binId) {
+  const hu   = document.getElementById('addHU_hu')?.value.trim();
+  const mat  = document.getElementById('addHU_mat')?.value.trim();
+  const qty  = parseFloat(document.getElementById('addHU_qty')?.value);
+  const unit = document.getElementById('addHU_unit')?.value.trim() || 'PC';
+  const stype= document.getElementById('addHU_stype')?.value.trim() || '001';
+
+  if (!hu)        { toast('HU Number required', 'err'); return; }
+  if (isNaN(qty)) { toast('Invalid quantity', 'err'); return; }
+
+  // Check for duplicate HU across all bins
+  const exists = Object.values(DB.bins).flat().some(h => h.hu === hu);
+  if (exists) { toast(`HU ${hu} already exists`, 'err'); return; }
+
+  if (!DB.bins[binId]) DB.bins[binId] = [];
+  DB.bins[binId].push({
+    bin: binId, hu, mat, stype, qty, avail: qty, unit,
+    grDate: new Date().toLocaleDateString('en-US'),
+    grTime: new Date().toLocaleTimeString('en-US'),
+    duration: '0', toNo: '', plant: '', sled: ''
+  });
+
+  logChange('add', { hu, mat, toBin: binId, qty, unit });
+  document.getElementById('saveStatus').textContent = '* Unsaved changes';
+  closeModal();
+  toast(`HU ${hu} added to ${binId}`, 'ok');
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════ */
+function openBinModal(binId) {
+  const items = DB.bins[binId] || [];
+  document.getElementById('modal-title').textContent = `Bin: ${binId} (${items.length} HUs)`;
+  document.getElementById('modal-body').innerHTML = `
+    <table class="detail-table">
+      <thead><tr>
+        <th>HU Number</th><th>Part Number</th><th>Stype</th>
+        <th>Qty</th><th>Unit</th><th>GR Date</th><th>Time</th>
+        <th>Dwell</th><th>TO#</th>
+      </tr></thead>
+      <tbody>
+        ${items.map(h => `<tr>
+          <td style="color:var(--acc2);font-size:10px;">${h.hu}</td>
+          <td style="color:var(--amber);">${h.mat}</td>
+          <td>${h.stype}</td>
+          <td>${h.qty}</td><td style="color:var(--muted);">${h.unit}</td>
+          <td style="color:var(--muted);">${h.grDate}</td>
+          <td style="color:var(--muted);font-size:10px;">${h.grTime}</td>
+          <td class="${dwellClass(h)}" style="font-weight:600;">${calcDwell(h)||'—'}</td>
+          <td style="color:var(--muted);font-size:10px;">${h.toNo}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function openHUModal(huNo) {
+  // Find HU across all bins
+  let found = null;
+  for (const [bin, items] of Object.entries(DB.bins)) {
+    const h = items.find(x => x.hu === huNo);
+    if (h) { found = { ...h, _bin: bin }; break; }
+  }
+  if (!found) return;
+  document.getElementById('modal-title').textContent = `HU: ${huNo}`;
+  const fields = [
+    ['Storage Bin', found._bin],
+    ['HU Number', found.hu],
+    ['Part Number', found.mat],
+    ['Plant', found.plant],
+    ['Storage Type', found.stype],
+    ['Total Stock', `${found.qty} ${found.unit}`],
+    ['Available Stock', found.avail],
+    ['Loaded Date', found.grDate],
+    ['Loaded Time', found.grTime],
+    ['Dwell Time', (() => { const d = calcDwell(found); return d ? `<span class="${dwellClass(found)}" style="font-weight:700;">${d}</span>` : '—'; })()],
+    ['Transfer Order #', found.toNo],
+    ['SLED/BBD', found.sled || '—'],
+  ];
+  document.getElementById('modal-body').innerHTML = `
+    <table class="detail-table">
+      <tbody>
+        ${fields.map(([k,v]) => `<tr>
+          <td style="color:var(--muted2);font-size:10px;width:45%">${k}</td>
+          <td style="font-weight:600;">${v||'—'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+function closeModal() {
+  document.getElementById('modal').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════════
+   TABS
+═══════════════════════════════════════════════ */
+function switchTab(tab) {
+  _activeTab = tab;
+  ['dash','grid','vlm','other','import'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`pane-${t}`).style.display = t === tab ? '' : 'none';
+  });
+  // Show/hide context-specific filters
+  document.getElementById('filterAisle').style.display   = tab === 'grid' ? '' : 'none';
+  document.getElementById('filterMachine').style.display = tab === 'vlm'  ? '' : 'none';
+  // Show Print PDF btn for grid/vlm/other
+  const printBtn = document.getElementById('btn-print-grid');
+  if (printBtn) printBtn.style.display = ['grid','vlm','other'].includes(tab) ? '' : 'none';
+  renderAll();
+}
+
+/* ═══════════════════════════════════════════════
+   DROP ZONE
+═══════════════════════════════════════════════ */
+function dzOver(e) { e.preventDefault(); document.getElementById('dropzone').classList.add('dragover'); }
+function dzLeave() { document.getElementById('dropzone').classList.remove('dragover'); }
+function dzDrop(e) {
+  e.preventDefault();
+  dzLeave();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['xlsx','xls'].includes(ext)) {
+    toast('XLSX or XLS file required (.xlsx / .xls)', 'err');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const parsed = parseXLSX(ev.target.result);
+    if (!parsed || parsed.error) {
+      toast(`Import failed — ${(parsed && parsed.error) || 'unknown error'}`, 'err'); return;
+    }
+    if (parsed.needsMapping) {
+      _pendingImport = { ...parsed, filename: file.name };
+      toast('Column names not recognized — please map columns manually', 'warn');
+      openColMapModal(_pendingImport); return;
+    }
+    if (parsed.ok) {
+      DB.bins = parsed.result.bins;
+      DB.meta = { ...parsed.result.meta, filename: file.name };
+      saveToStorage(); refreshFilters(); renderAll(); switchTab('grid');
+      const note = parsed.headerRowNum > 1 ? ` (header at row ${parsed.headerRowNum})` : '';
+      toast(`✓ ${Object.keys(DB.bins).length} Bins, ${parsed.result.meta.totalRows} HUs imported from ${file.name}${note}`, 'ok');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ═══════════════════════════════════════════════
+   CLEAR
+═══════════════════════════════════════════════ */
+function clearData() {
+  if (!confirm('Clear all data? This cannot be undone.')) return;
+  DB = { bins: {}, meta: {} };
+  localStorage.removeItem(KEY_DB);
+  refreshFilters();
+  renderAll();
+  toast('All data cleared', 'warn');
+}
+
+/* ═══════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════ */
+let _tt;
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `show ${type}`;
+  if (_tt) clearTimeout(_tt);
+  _tt = setTimeout(() => { el.className = ''; }, 3000);
+}
+
+/* ═══════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════ */
+if (loadFromStorage()) {
+  loadChangelog();
+  refreshFilters();
+  renderAll();
+  renderChangelog();
+  document.getElementById('saveStatus').textContent = 'Loaded from storage';
+  switchTab('dash');
+} else {
+  loadChangelog();
+  renderChangelog();
+  switchTab('import');
+}
+</script>
+</body>
+</html>
