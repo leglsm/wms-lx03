@@ -1,3 +1,12 @@
+
+
+Skip to content
+Using Gmail with screen readers
+Conversations
+89% of 15 GB used
+Terms · Privacy · Program Policies
+Last account activity: 5 minutes ago
+Details
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -3730,9 +3739,26 @@ function confirmPaste() {
   if (!raw) return;
   const rows = parseTSV(raw);
   if (rows.length < 2) { toast('Not enough data rows', 'err'); return; }
-  const hdrIdx = findHeaderRow(rows);
-  const hdr = rows[hdrIdx].map(c => c.trim());
-  const dataRows = rows.slice(hdrIdx + 1).filter(r => r.some(c => c.trim()));
+
+  let hdrIdx, hdr, dataRows;
+
+  if (_pasteType === 'cc') {
+    // CC has 2-row merged header. Find the row containing "SAP Part Number" or "SAP Part"
+    hdrIdx = 0;
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      const cells = rows[i].map(c => c.trim().toLowerCase());
+      if (cells.some(c => /sap.?part/i.test(c) || c === 'f')) {
+        hdrIdx = i; break;
+      }
+    }
+    hdr = rows[hdrIdx].map(c => c.trim());
+    dataRows = rows.slice(hdrIdx + 1).filter(r => r.some(c => c.trim()));
+  } else {
+    hdrIdx = findHeaderRow(rows);
+    hdr = rows[hdrIdx].map(c => c.trim());
+    dataRows = rows.slice(hdrIdx + 1).filter(r => r.some(c => c.trim()));
+  }
+
   if (_pasteType === 'lx03')     pasteImportLX03(hdr, dataRows);
   else if (_pasteType === 'dr')  pasteImportDR(hdr, dataRows);
   else if (_pasteType === 'yy')  pasteImportYY(hdr, dataRows);
@@ -4075,40 +4101,88 @@ function invLoadCC() {
 }
 
 function parseCCPaste(hdr, dataRows) {
-  const iSAP  = colFind(hdr,'sap.?part.?number','sap.?part','^sap$');
-  const iDesc = colFind(hdr,'description','product');
-  const iPPU  = colFind(hdr,'parts.*\\bpu\\b','sets.*\\bpu\\b','parts or sets.*pu');
-  const iPHU  = colFind(hdr,'pu.*hu','pu\\s*/\\s*hu','pu per hu');
-  const iPUL  = colFind(hdr,'^l\\s*$','^l\\s+mm','pu.*^l');
-  const iPUW  = colFind(hdr,'^w\\s*$','^w\\s+mm');
-  const iPUH  = colFind(hdr,'^h\\s*$','^h\\s+mm');
+  // Coverage file has 2-row merged header with PU and HU sections.
+  // Strategy: find SAP Part Number column first, then locate PU L/W/H
+  // by finding the FIRST set of L mm / W mm / H mm columns AFTER SAP col.
+  // PU/HU column contains "2 / 1" style values.
+
+  const iSAP  = colFind(hdr,'sap.?part.?number','sap.?part','^sap.?part$','^sap$','f');
+  const iDesc = colFind(hdr,'material.?desc','description','product');
+
+  // parts or sets / PU
+  const iPPU  = colFind(hdr,
+    'parts or sets.*pu','parts.*pu','sets.*pu',
+    'parts\\/pu','parts per pu','sets\\/pu'
+  );
+
+  // PU / HU — column header is literally "PU / HU" or "PU/HU"
+  const iPHU  = colFind(hdr,
+    '^pu\\s*/\\s*hu$','pu\\s*\\/\\s*hu','pu per hu','pu\\/hu'
+  );
 
   if (iSAP < 0) { toast('Component Coverage: SAP Part Number column not found', 'err'); return; }
+
+  // Find PU L/W/H: search for 'l' 'w' 'h' or 'l mm' 'w mm' 'h mm'
+  // after the SAP column. There may be multiple L/W/H sets (PU then HU).
+  // Pick the FIRST occurrence after SAP col for PU dims.
+  function findDimCol(labels, afterIdx) {
+    for (const pat of labels) {
+      const re = new RegExp(pat, 'i');
+      for (let i = afterIdx; i < hdr.length; i++) {
+        if (re.test(hdr[i].trim())) return i;
+      }
+    }
+    return -1;
+  }
+
+  const iPUL = findDimCol(['^l$','l\\s*mm','l\\s*\\(mm\\)'], iSAP + 1);
+  const iPUW = findDimCol(['^w$','w\\s*mm','w\\s*\\(mm\\)'], iPUL >= 0 ? iPUL + 1 : iSAP + 1);
+  const iPUH = findDimCol(['^h$','h\\s*mm','h\\s*\\(mm\\)'], iPUW >= 0 ? iPUW + 1 : iSAP + 1);
+
+  // Debug info in console
+  console.log('CC columns →',
+    'SAP:', iSAP, hdr[iSAP],
+    '| desc:', iDesc, '| parts/PU:', iPPU, '| PU/HU:', iPHU,
+    '| L:', iPUL, hdr[iPUL], '| W:', iPUW, hdr[iPUW], '| H:', iPUH, hdr[iPUH]
+  );
+
   const g = (r,i) => i>=0 ? String(r[i]||'').trim() : '';
   const n = (r,i) => {
     if (i < 0) return 0;
     const raw = String(r[i]||'').trim();
-    // Handle "2 / 1" format → take first number
     const match = raw.match(/(\d+(?:\.\d+)?)/);
     return match ? parseFloat(match[1]) : 0;
   };
+
   const partMap = {};
   dataRows.forEach(r => {
     const sap = normPart(g(r, iSAP));
     if (!sap || sap==='0') return;
+    const ppu  = n(r, iPPU) || 1;
+    const phu  = n(r, iPHU) || 1;
+    const puL  = n(r, iPUL);
+    const puW  = n(r, iPUW);
+    const puH  = n(r, iPUH);
     partMap[sap] = {
-      desc: g(r,iDesc),
-      partsPerPU: n(r,iPPU) || 1,
-      puPerHU:    n(r,iPHU) || 1,   // PU / HU column e.g. "2 / 1" → 2
-      puL: n(r,iPUL), puW: n(r,iPUW), puH: n(r,iPUH),
+      desc:       g(r, iDesc),
+      partsPerPU: ppu,
+      puPerHU:    phu,
+      puL, puW, puH,
     };
   });
+
   const count = Object.keys(partMap).length;
   if (!count) { toast('Component Coverage: No valid rows', 'err'); return; }
+
+  // Sample first entry for verification toast
+  const sample = Object.entries(partMap)[0];
+  const sv = sample[1];
+  toast(`✓ CC: ${count} parts — e.g. ${sample[0]}: L${sv.puL}×W${sv.puW}×H${sv.puH}, ${sv.partsPerPU}/PU, ${sv.puPerHU}PU/HU`, 'ok');
+
   CC_DATA = { partMap };
   try { localStorage.setItem(KEY_CC, JSON.stringify(CC_DATA)); } catch {}
-  toast(`✓ Component Coverage: ${count} parts loaded`, 'ok');
   if (_activeTab === 'hb') renderHighbay();
+  if (_activeTab === 'bv') bvInit();
 }
 
 /* ═══════════════════════════════════════════════
@@ -4654,3 +4728,5 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+wms_lx03_v15-4.html
+Displaying wms_lx03_v15-4.html.
