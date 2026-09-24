@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WMS LX03 Viewer — Demo</title>
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--ink:#1c2230;--muted:#667085;--line:#e3e6eb;--accent:#2563eb;
+  --a0:#d7ecdc;--a1:#9fd3ae;--a2:#f3d58a;--a3:#f0a46a;--a4:#d9534f;--empty:#fff;--blk:#6b21a8;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12151b;--card:#1b1f27;--ink:#e6e9ef;--muted:#98a2b3;--line:#2b313c;--accent:#6ea0ff;
+  --a0:#1f4a2c;--a1:#2f7a47;--a2:#8a7424;--a3:#a3582a;--a4:#b3403c;--empty:#161a21;--blk:#c084fc;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{padding:18px 16px 8px;max-width:1200px;margin:0 auto}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:13px;margin-top:2px}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:99px;background:var(--line);color:var(--muted);margin-left:6px;vertical-align:middle}
+main{max-width:1200px;margin:0 auto;padding:0 16px 40px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px}
+.kpi .v{font-size:24px;font-weight:650}
+.kpi .l{color:var(--muted);font-size:12px}
+.kpi.warn .v{color:var(--a4)} .kpi.blk .v{color:var(--blk)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px}
+.card h2{font-size:15px;margin:0 0 10px}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>.card{flex:1 1 340px;min-width:0}
+.card{min-width:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer;font:inherit;font-size:13px}
+.tabs button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:10px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px;border:1px solid var(--line)}
+.mapwrap{overflow-x:auto;padding-bottom:4px}
+.aisle{margin-bottom:12px}
+.aisle .t{font-size:12px;color:var(--muted);margin-bottom:3px}
+.grid{display:grid;gap:2px;width:max-content}
+.cell{width:24px;height:22px;border-radius:3px;border:1px solid var(--line);background:var(--empty);cursor:pointer;position:relative}
+.cell.blk::after{content:"";position:absolute;right:2px;top:2px;width:6px;height:6px;border-radius:50%;background:var(--blk)}
+.cell.sel{outline:2px solid var(--accent);outline-offset:1px}
+.lvl{font-size:10px;color:var(--muted);width:22px;text-align:right;padding-right:4px;line-height:22px}
+.floor{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.floor .cell{width:auto;height:48px;font-size:11px;padding:4px;color:var(--ink)}
+#detail{font-size:13px}
+#detail .none{color:var(--muted)}
+.bars .b{display:grid;grid-template-columns:90px 1fr 44px;gap:8px;align-items:center;margin:5px 0;font-size:12px}
+.bars .track{background:var(--line);border-radius:4px;height:14px;overflow:hidden}
+.bars .fill{height:100%}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--muted);font-weight:600;cursor:pointer;user-select:none}
+td.n,th.n{text-align:right}
+.tag{font-size:11px;padding:1px 6px;border-radius:99px;color:#fff}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+input,select{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input{flex:1 1 220px}
+.more{margin-top:8px;text-align:center}
+.more button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:6px 12px;cursor:pointer}
+footer{max-width:1200px;margin:0 auto;padding:0 16px 30px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <h1>WMS LX03 Viewer <span class="badge">Demo · fictional data</span></h1>
+  <div class="sub" id="sub"></div>
+</header>
+<main>
+  <section class="kpis" id="kpis"></section>
+
+  <section class="card">
+    <h2>Bin map</h2>
+    <div class="tabs" id="tabs"></div>
+    <div class="legend" id="legend"></div>
+    <div class="mapwrap" id="map"></div>
+  </section>
+
+  <div class="row">
+    <section class="card"><h2>Bin detail</h2><div id="detail"><span class="none">Tap a bin on the map to see its storage units.</span></div></section>
+    <section class="card"><h2>Stock aging (storage units)</h2><div class="bars" id="aging"></div></section>
+  </div>
+
+  <section class="card">
+    <h2>Action list — aged &gt; 180 days or blocked</h2>
+    <div class="tbl"><table id="action"></table></div>
+  </section>
+
+  <section class="card">
+    <h2>Bin stock (LX03)</h2>
+    <div class="controls">
+      <input id="q" placeholder="Search material, description, bin or storage unit">
+      <select id="ft"></select>
+    </div>
+    <div class="tbl"><table id="stock"></table></div>
+    <div class="more" id="more"></div>
+  </section>
+</main>
+<footer>All plants, materials, programs and quantities are fictional and generated with a fixed seed. Built as a portfolio demo of an SAP LX03 bin-stock viewer.</footer>
+
+<script>
+/* ---------- CONFIG ---------- */
+const CONFIG = {
+  asOf: "2026-09-01",
+  agingBuckets: [ // [label, maxDays, colorVar]
+    ["0–30 d", 30, "--a0"], ["31–90 d", 90, "--a1"], ["91–180 d", 180, "--a2"],
+    ["181–365 d", 365, "--a3"], ["> 365 d", Infinity, "--a4"]
+  ],
+  actionAgeDays: 180,
+  pageSize: 60
+};
+/* ---------- DATA (fictional) ---------- */
+const DATA = __DATA__;
+
+/* ---------- LOGIC (pure functions) ---------- */
+function bucketIndex(age){ return CONFIG.agingBuckets.findIndex(b => age <= b[1]); }
+function expandRows(d){
+  return d.rows.map(r => {
+    const m = d.mats[r[3]];
+    return { stype:r[0], bin:r[1], hu:r[2], mat:m[0], desc:m[1], uom:m[2],
+             batch:r[4], qty:r[5], avail:r[6], age:r[7], blocked:r[6]===0 };
+  });
+}
+function groupByBin(rows){
+  const g = new Map();
+  rows.forEach(r => { const k = r.stype+"|"+r.bin; if(!g.has(k)) g.set(k, []); g.get(k).push(r); });
+  return g;
+}
+function capacity(layout){
+  let n = 0;
+  for (const t of layout) n += t.bins ? t.bins.length : t.aisles*t.bays*t.levels;
+  return n;
+}
+function kpis(rows, byBin, layout){
+  return {
+    occ: byBin.size, cap: capacity(layout), hus: rows.length,
+    mats: new Set(rows.map(r=>r.mat)).size,
+    aged: rows.filter(r=>r.age>CONFIG.actionAgeDays).length,
+    blocked: rows.filter(r=>r.blocked).length
+  };
+}
+function agingDist(rows){
+  const c = CONFIG.agingBuckets.map(()=>0);
+  rows.forEach(r => c[bucketIndex(r.age)]++);
+  return c;
+}
+function grDate(age){
+  const d = new Date(CONFIG.asOf+"T00:00:00"); d.setDate(d.getDate()-age);
+  return d.toISOString().slice(0,10);
+}
+
+/* ---------- VIEW ---------- */
+const ROWS = expandRows(DATA), BYBIN = groupByBin(ROWS), $ = id => document.getElementById(id);
+const col = v => `var(${v})`;
+const TYPES = DATA.layout.map(l => l.type), LAYOUT = Object.fromEntries(DATA.layout.map(l => [l.type, l]));
+let curType = TYPES[0], selKey = null, sortKey = "age", sortDir = -1, shown = CONFIG.pageSize;
+
+function renderHeader(){
+  $("sub").textContent = `Warehouse ${DATA.meta.warehouse} · Plant ${DATA.meta.plant} · Snapshot as of ${CONFIG.asOf}`;
+  const k = kpis(ROWS, BYBIN, DATA.layout);
+  const items = [
+    [`${k.occ} / ${k.cap}`, `Occupied bins (${Math.round(k.occ/k.cap*100)}%)`, ""],
+    [k.hus, "Storage units", ""], [k.mats, "Materials", ""],
+    [k.aged, `Aged > ${CONFIG.actionAgeDays} days`, "warn"], [k.blocked, "Blocked (0 available)", "blk"]
+  ];
+  $("kpis").innerHTML = items.map(([v,l,c]) => `<div class="kpi ${c}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("");
+  $("legend").innerHTML = CONFIG.agingBuckets.map(b=>`<span><i style="background:${col(b[2])}"></i>${b[0]}</span>`).join("")
+    + `<span><i style="background:var(--empty)"></i>Empty</span><span><i style="background:var(--blk);border-radius:50%"></i>Blocked stock</span>`;
+}
+function renderTabs(){
+  $("tabs").innerHTML = DATA.layout.map(v => { const t = v.type; return `<button data-t="${t}" class="${t===curType?"on":""}">${t} · ${v.name}</button>`; }).join("");
+  $("tabs").querySelectorAll("button").forEach(b => b.onclick = () => { curType = b.dataset.t; renderTabs(); renderMap(); });
+}
+function cellHTML(key, label, extraText){
+  const hus = BYBIN.get(key);
+  let style = "", cls = "cell";
+  if (hus){
+    const oldest = Math.max(...hus.map(h=>h.age));
+    style = `background:${col(CONFIG.agingBuckets[bucketIndex(oldest)][2])}`;
+    if (hus.some(h=>h.blocked)) cls += " blk";
+  }
+  if (key===selKey) cls += " sel";
+  return `<div class="${cls}" style="${style}" data-k="${key}" title="${label}">${extraText||""}</div>`;
+}
+function renderMap(){
+  const L = LAYOUT[curType], p = n => String(n).padStart(2,"0");
+  let h = "";
+  if (L.bins){
+    h = `<div class="floor">` + L.bins.map(b => {
+      const n = (BYBIN.get(curType+"|"+b)||[]).length;
+      return cellHTML(curType+"|"+b, b, `<b>${b}</b><br>${n} SU`);
+    }).join("") + `</div>`;
+  } else {
+    for (let a=1; a<=L.aisles; a++){
+      h += `<div class="aisle"><div class="t">Aisle ${p(a)} — bays 01–${p(L.bays)}</div>`
+        + `<div class="grid" style="grid-template-columns:22px repeat(${L.bays},24px)">`;
+      for (let lv=L.levels; lv>=1; lv--){
+        h += `<div class="lvl">L${lv}</div>`;
+        for (let b=1; b<=L.bays; b++){ const bin = `${p(a)}-${p(b)}-${p(lv)}`; h += cellHTML(curType+"|"+bin, bin); }
+      }
+      h += `</div></div>`;
+    }
+  }
+  $("map").innerHTML = h;
+  $("map").querySelectorAll(".cell").forEach(c => c.onclick = () => { selKey = c.dataset.k; renderMap(); renderDetail(); });
+}
+function renderDetail(){
+  const [t, bin] = selKey.split("|"), hus = BYBIN.get(selKey);
+  if (!hus){ $("detail").innerHTML = `<b>${t} / ${bin}</b><p class="none">Empty bin.</p>`; return; }
+  $("detail").innerHTML = `<b>${t} / ${bin}</b> · ${hus.length} storage unit(s)<div class="tbl"><table>
+    <tr><th>SU</th><th>Material</th><th>Description</th><th class="n">Qty</th><th class="n">Avail</th><th>GR date</th><th class="n">Age</th></tr>
+    ${hus.map(r=>`<tr><td>${r.hu}</td><td>${r.mat}</td><td>${r.desc}</td><td class="n">${r.qty}</td><td class="n">${r.avail}</td><td>${grDate(r.age)}</td><td class="n">${r.age}</td></tr>`).join("")}
+  </table></div>`;
+}
+function renderAging(){
+  const c = agingDist(ROWS), max = Math.max(...c);
+  $("aging").innerHTML = CONFIG.agingBuckets.map((b,i) =>
+    `<div class="b"><span>${b[0]}</span><div class="track"><div class="fill" style="width:${c[i]/max*100}%;background:${col(b[2])}"></div></div><span style="text-align:right">${c[i]}</span></div>`).join("");
+}
+function ageTag(age){ const b = CONFIG.agingBuckets[bucketIndex(age)]; return `<span class="tag" style="background:${col(b[2])};color:var(--ink)">${age} d</span>`; }
+function renderAction(){
+  const list = ROWS.filter(r => r.age>CONFIG.actionAgeDays || r.blocked)
+    .sort((a,b) => b.age - a.age);
+  $("action").innerHTML = `<tr><th>Reason</th><th>Bin</th><th>SU</th><th>Material</th><th>Description</th><th class="n">Qty</th><th>Age</th></tr>`
+    + list.slice(0,15).map(r => `<tr><td>${[r.age>CONFIG.actionAgeDays?'Aged':'', r.blocked?'<span class="tag" style="background:var(--blk)">Blocked</span>':''].filter(Boolean).join(' + ')}</td><td>${r.stype}/${r.bin}</td><td>${r.hu}</td><td>${r.mat}</td><td>${r.desc}</td><td class="n">${r.qty}</td><td>${ageTag(r.age)}</td></tr>`).join("")
+    + (list.length>15 ? `<tr><td colspan="7" style="color:var(--muted)">+ ${list.length-15} more — use the table below (sort by Age).</td></tr>` : "");
+}
+const COLS = [["stype","Type"],["bin","Bin"],["hu","SU"],["mat","Material"],["desc","Description"],["batch","Batch"],["qty","Qty",1],["avail","Avail",1],["age","Age (d)",1]];
+function renderStock(){
+  const q = $("q").value.trim().toLowerCase(), ft = $("ft").value;
+  const list = ROWS.filter(r => (!ft || r.stype===ft) &&
+      (!q || [r.mat,r.desc,r.bin,r.hu].some(v => v.toLowerCase().includes(q))))
+    .sort((a,b) => (a[sortKey] > b[sortKey] ? 1 : a[sortKey] < b[sortKey] ? -1 : 0) * sortDir);
+  $("stock").innerHTML = `<tr>${COLS.map(([k,l,n]) => `<th data-k="${k}" class="${n?"n":""}">${l}${k===sortKey?(sortDir>0?" ▲":" ▼"):""}</th>`).join("")}</tr>`
+    + list.slice(0,shown).map(r => `<tr>${COLS.map(([k,,n]) => `<td class="${n?"n":""}">${r[k]}</td>`).join("")}</tr>`).join("");
+  $("stock").querySelectorAll("th").forEach(th => th.onclick = () => {
+    sortDir = th.dataset.k===sortKey ? -sortDir : 1; sortKey = th.dataset.k; renderStock(); });
+  $("more").innerHTML = list.length>shown ? `<button>Show more (${list.length-shown} left)</button>` : `<span style="color:var(--muted);font-size:12px">${list.length} rows</span>`;
+  const btn = $("more").querySelector("button"); if (btn) btn.onclick = () => { shown += CONFIG.pageSize; renderStock(); };
+}
+$("ft").innerHTML = `<option value="">All storage types</option>` + DATA.layout.map(v=>`<option value="${v.type}">${v.type} · ${v.name}</option>`).join("");
+$("q").oninput = $("ft").onchange = () => { shown = CONFIG.pageSize; renderStock(); };
+
+renderHeader(); renderTabs(); renderMap(); renderAging(); renderAction(); renderStock();
+</script>
+</body>
+</html>
